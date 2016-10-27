@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="../build.js"></script>
+  </head>
+  <body style="background-color: #000">
+    <a-scene>
+      <!-- lights -->
+      <a-entity position="-1 4 0" light="color: #f4f4f4; intensity: 0.6; type: point"></a-entity>
+      <a-entity position="10 3 3" light="color: #47c9ff; intensity: 0.6; type: hemisphere"></a-entity>
+      <!-- scene geometry -->
+      <a-entity
+                geometry="primitive: sphere; radius: 1;"
+                position= "-5 0 -5"
+                material="color: #f00">
+      </a-entity>ass
+      <a-entity
+                geometry="primitive: box; width: 6; height: 1.5"
+                position= "-3 0 6"
+                material="color: #ff0">
+      </a-entity>
+      <a-entity
+                geometry="primitive: box;"
+                position= "4 0 3";
+                material="color: #00f">
+      </a-entity>
+      <a-entity id="floorgeometry" position="0 0.15 0"
+      material="src: url(asphalt.jpg); repeat: 10 10" obj-model="obj: url(floor.obj)">
+      </a-entity>
+
+      <!-- hand controls -->
+      <a-entity id="left-hand"
+                teleport="ground: #floorgeometry"
+                vive-controls="hand: left">
+      </a-entity>
+      <a-entity id="right-hand"
+                teleport="ground: #floorgeometry"
+                vive-controls="hand: right">
+      </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

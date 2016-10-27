@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="../build.js"></script>
+  </head>
+  <body style="background-color: #fff">
+    <a-scene>
+      <!-- scene geometry -->
+      <a-entity
+        rotation="-90 0 0"
+        geometry="primitive: plane; width: 100; height: 100"
+        material="color: #00f">
+      </a-entity>
+
+      <!-- hand controls -->
+      <a-entity id="left-hand"
+                teleport
+                vive-controls="hand: left">
+      </a-entity>
+      <a-entity id="right-hand"
+                teleport
+                vive-controls="hand: right">
+      </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
