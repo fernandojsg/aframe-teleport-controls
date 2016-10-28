@@ -10,7 +10,7 @@ if (typeof AFRAME === 'undefined') {
 AFRAME.registerComponent('teleport', {
   schema: {
     button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
-    ground: {type: 'selector'},
+    collisionMesh: {type: 'selector'},
     hitEntity: {type: 'selector'},
     defaultEntityColor: {type: 'color', default: '#99ff99'},
     defaultEntityRadius: {default: 0.25},
@@ -74,8 +74,6 @@ AFRAME.registerComponent('teleport', {
     this.prevHeightDiff = this.hitPoint.y;
 
     cameraEl.setAttribute('position', newCamPosition);
-
-    console.log(newCamPosition);
 
     // Find the hands and move them proportionally
     var hands = document.querySelectorAll('a-entity[tracked-controls]');
@@ -148,7 +146,7 @@ AFRAME.registerComponent('teleport', {
         this.raycaster.set(last, dirLastNext);
 
         // Check intersection with the floor
-        var floor = this.data.ground && this.data.ground.getObject3D('mesh');
+        var floor = this.data.collisionMesh && this.data.collisionMesh.getObject3D('mesh');
         if (!floor) {
           floor = this.defaultPlane
         }
