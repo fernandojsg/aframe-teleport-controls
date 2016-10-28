@@ -118,6 +118,7 @@
 	    hitColor: {type: 'color', default: '#99ff99'},
 	    nonHitColor: {type: 'color', default: '#ff0000'},
 	    numberPoints: {default: 30},
+	    maxDistance: {default: 5},
 	    normal: {type: 'vec3', default: '0 1 0'},
 	    angleThreshold: {default: '45'}
 	  },
@@ -134,6 +135,7 @@
 	    this.referenceNormal = new THREE.Vector3();
 
 	    this.raycaster = new THREE.Raycaster();
+
 	    this.nonHitColor = new THREE.Color();
 	    this.hitColor = new THREE.Color();
 	    if (this.data.hitEntity) {
@@ -169,7 +171,10 @@
 	        // @todo Create this aux vectors outside
 	        var cameraEl = self.el.sceneEl.camera.el;
 	        var camPosition = new THREE.Vector3().copy(cameraEl.getAttribute('position'));
+	        console.log(camPosition.y);
+
 	        var newCamPositionY = camPosition.y + self.hitPoint.y - self.prevHeightDiff;
+	        console.log(camPosition.y, self.hitPoint.y, self.prevHeightDiff, newCamPositionY);
 	        var newCamPosition = new THREE.Vector3(self.hitPoint.x, newCamPositionY, self.hitPoint.z);
 	        self.prevHeightDiff = self.hitPoint.y;
 
@@ -214,8 +219,10 @@
 	      matrixWorld.decompose(translation, quaternion, scale);
 	      var direction = new THREE.Vector3(0, -0.1, -0.9);
 	      direction.applyQuaternion(quaternion);
-	      var v0 = direction.multiplyScalar(2);
-	      var a = new THREE.Vector3(0, -1.2, 0);
+	      var v0 = direction.multiplyScalar(5);
+	      //var a = new THREE.Vector3(0, -1.2, 0);
+	      var a = new THREE.Vector3(0, -5.2, 0);
+
 	      var last = p0.clone();
 	      var next;
 
@@ -269,7 +276,7 @@
 	  },
 
 	  createLine: function () {
-	    this.data.numberPoints = 50;
+	    this.data.numberPoints = 25;
 	    this.line = new RayCurve(this.data.numberPoints, 0.025);
 	    var mesh = this.line.mesh;
 	    this.teleportEntity.setObject3D('mesh', mesh);

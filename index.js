@@ -1,72 +1,15 @@
 /* global AFRAME */
+var parabolicCurve = require('./lib/ParabolicCurve');
+var RayCurve = require('./lib/RayCurve');
 
 if (typeof AFRAME === 'undefined') {
   throw new Error('Component attempted to register before AFRAME was available.');
 }
 
-var RayCurve = function (numPoints, width, up) {
-  this.geometry = new THREE.BufferGeometry();
-  this.vertices = new Float32Array(numPoints * 3 * 2);
-  this.uvs = new Float32Array(numPoints * 2 * 2);
-  this.width = width;
-
-  this.geometry.addAttribute('position', new THREE.BufferAttribute(this.vertices, 3).setDynamic(true));
-
-  this.material = new THREE.MeshBasicMaterial({
-    side: THREE.DoubleSide,
-    color: 0xff0000,
-    depthTest: false
-  });
-
-  this.mesh = new THREE.Mesh(this.geometry, this.material);
-  this.mesh.drawMode = THREE.TriangleStripDrawMode;
-
-  this.mesh.frustumCulled = false;
-  this.mesh.vertices = this.vertices;
-
-  this.points = [];
-  for (var i = 0; i < numPoints; i++) {
-    this.points.push(new THREE.Vector3());
-  }
-  this.numPoints = numPoints;
-  this.usedPoints = 0;
-};
-
-RayCurve.prototype = {
-  setPoint: function (i, point) {
-    this.points[i] = point.clone();
-  },
-  update: function () {
-    var direction = new THREE.Vector3();
-    var posA = new THREE.Vector3();
-    var posB = new THREE.Vector3();
-
-    this.idx = 0;
-    direction = this.points[0].clone().sub(this.points[1]).normalize();
-    var UP = new THREE.Vector3(0, 1, 0);
-    direction.cross(UP).normalize();
-
-    for (var i = 0; i < this.numPoints; i++) {
-      posA.copy(this.points[i]).add(direction.clone().multiplyScalar(this.width / 2));
-      posB.copy(this.points[i]).add(direction.clone().multiplyScalar(-this.width / 2));
-
-      this.vertices[this.idx++] = posA.x;
-      this.vertices[this.idx++] = posA.y;
-      this.vertices[this.idx++] = posA.z;
-
-      this.vertices[this.idx++] = posB.x;
-      this.vertices[this.idx++] = posB.y;
-      this.vertices[this.idx++] = posB.z;
-    }
-
-    this.geometry.attributes.position.needsUpdate = true;
-  }
-};
-
 /* global THREE AFRAME  */
 AFRAME.registerComponent('teleport', {
   schema: {
-    button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
+    on: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
     ground: {type: 'selector'},
     hitEntity: {type: 'selector'},
     hitColor: {type: 'color', default: '#99ff99'},
@@ -79,25 +22,14 @@ AFRAME.registerComponent('teleport', {
 
   init: function () {
     this.active = false;
-    this.resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
     this.obj = this.el.object3D;
     this.mesh = null;
     this.hitPoint = new THREE.Vector3();
-    this.intersect = null;
     this.hit = false;
     this.prevHeightDiff = 0;
     this.referenceNormal = new THREE.Vector3();
-
-    this.raycaster = new THREE.Raycaster();
-
     this.nonHitColor = new THREE.Color();
     this.hitColor = new THREE.Color();
-    if (this.data.hitEntity) {
-      this.hitEntity = this.data.hitEntity;
-    } else {
-      this.hitEntity = this.createHitEntity();
-    }
-    this.hitEntity.setAttribute('visible', false);
 
     this.teleportEntity = document.createElement('a-entity');
     this.teleportEntity.className = 'teleport-ray';
@@ -148,7 +80,6 @@ AFRAME.registerComponent('teleport', {
   },
 
   update: function (oldData) {
-    console.log(oldData);
     this.referenceNormal.copy(this.data.normal);
     this.nonHitColor.set(this.data.nonHitColor);
     this.hitColor.set(this.data.hitColor);
@@ -156,6 +87,14 @@ AFRAME.registerComponent('teleport', {
     if (oldData.numberPoints !== this.data.numberPoints) {
       this.createLine();
     }
+
+    if (this.data.hitEntity) {
+      this.hitEntity = this.data.hitEntity;
+    } else {
+      this.hitEntity = this.createHitEntity();
+    }
+    this.hitEntity.setAttribute('visible', false);
+
   },
 
   remove: function () {
@@ -188,7 +127,7 @@ AFRAME.registerComponent('teleport', {
 
       for (var i = 0; i < this.line.numPoints; i++) {
         var t = i / (this.line.numPoints - 1);
-        next = ParabolicCurve(p0, v0, a, t);
+        next = parabolicCurve(p0, v0, a, t);
 
         // Update the raycaster with the length of the current segment last->next
         var lastNext = next.clone().sub(last);
@@ -208,7 +147,6 @@ AFRAME.registerComponent('teleport', {
           this.hitEntity.setAttribute('visible', true);
 
           this.hit = true;
-          this.intersect = intersects[0];
           this.hitPoint.copy(intersects[0].point);
 
           // If hit, just fill the rest of the points with the hit point and break the loop
@@ -257,17 +195,3 @@ AFRAME.registerComponent('teleport', {
     return hitEntity;
   }
 });
-
-// Parabolic motion equation, y = p0 + v0*t + 1/2at^2
-function ParabolicCurveScalar (p0, v0, a, t) {
-  return p0 + v0 * t + 0.5 * a * t * t;
-}
-
-// Parabolic motion equation applied to 3 dimensions
-function ParabolicCurve (p0, v0, a, t) {
-  var ret = new THREE.Vector3();
-  ret.x = ParabolicCurveScalar(p0.x, v0.x, a.x, t);
-  ret.y = ParabolicCurveScalar(p0.y, v0.y, a.y, t);
-  ret.z = ParabolicCurveScalar(p0.z, v0.z, a.z, t);
-  return ret;
-}
