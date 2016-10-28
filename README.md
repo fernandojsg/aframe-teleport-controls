@@ -30,7 +30,7 @@ Install and use by directly including the [browser files](dist):
 <head>
   <title>My A-Frame Scene</title>
   <script src="https://aframe.io/releases/0.3.2/aframe.min.js"></script>
-  <script src="https://rawgit.com/fernandojsg/aframe-teleport-component/tree/master/dist/aframe-etleport-component.min.js"></script>
+  <script src="https://rawgit.com/fernandojsg/aframe-teleport-component/tree/master/dist/aframe-teleport-component.min.js"></script>
 </head>
 
 <body>

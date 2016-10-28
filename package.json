@@ -8,7 +8,7 @@
   "scripts": {
     "build": "browserify examples/main.js -o examples/build.js",
      "dev": "budo examples/main.js:build.js --dir examples --port 8000 --live --open",
-     "dist": "webpack index.js dist/aframe-example-component.js && webpack -p index.js dist/aframe-example-component.min.js",
+     "dist": "webpack index.js dist/aframe-teleport-component.js && webpack -p index.js dist/aframe-teleport-component.min.js",
      "lint": "semistandard -v | snazzy",
      "prepublish": "npm run dist",
      "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",
