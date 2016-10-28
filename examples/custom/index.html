@@ -35,20 +35,20 @@
 
       <!-- hand controls -->
       <a-entity id="left-hand"
-                teleport="collisionMesh: #floorLeft;
-                hitColor: #ff9999;
-                missColor: #ff0000;
+                teleport="collisionEntity: #floorLeft;
+                curveHitColor: #ff9999;
+                curveMissColor: #ff0000;
                 hitEntity: #hintEntity;"
                 vive-controls="hand: left">
       </a-entity>
       <a-entity id="right-hand"
-                teleport="collisionMesh: #floorRight;
+                teleport="collisionEntity: #floorRight;
                 button: trigger;
-                hitColor: #9999ff;
-                missColor: #ff0000;
-                numberPoints: 50;
-                lineWidth: 0.015;
-                shootingSpeed: 8"
+                curveHitColor: #9999ff;
+                curveMissColor: #ff0000;
+                curveNumberPoints: 50;
+                curveLineWidth: 0.015;
+                curveShootingSpeed: 8"
             vive-controls="hand: right">
       </a-entity>
       </a-entity>
