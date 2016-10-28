@@ -7,6 +7,7 @@
     <a-scene>
       <!-- scene geometry -->
       <a-entity
+        id="floor"
         rotation="-90 0 0"
         geometry="primitive: plane; width: 100; height: 100"
         material="color: #333">
@@ -14,11 +15,11 @@
 
       <!-- hand controls -->
       <a-entity id="left-hand"
-                teleport
+                teleport="ground: #floor"
                 vive-controls="hand: left">
       </a-entity>
       <a-entity id="right-hand"
-                teleport
+      teleport="ground: #floor"
                 vive-controls="hand: right">
       </a-entity>
       </a-entity>
