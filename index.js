@@ -17,7 +17,6 @@ AFRAME.registerComponent('teleport', {
     hitColor: {type: 'color', default: '#99ff99'},
     missColor: {type: 'color', default: '#ff0000'},
     numberPoints: {default: 30},
-    maxDistance: {default: 5},
     lineWidth: {default: 0.025},
     normal: {type: 'vec3', default: '0 1 0'},
     angleThreshold: {default: '45'},

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="../build.js"></script>
+    <script src="../common/shaders/skyGradient.js"></script>
+  </head>
+  <body style="background-color: #000">
+    <a-scene>
+      <!-- lights -->
+      <a-entity position="-1 4 0" light="color: #f4f4f4; intensity: 0.6; type: point"></a-entity>
+      <a-entity position="10 3 3" light="color: #47c9ff; intensity: 0.3; type: hemisphere"></a-entity>
+      <!-- scene geometry -->
+      <a-entity id="sky"
+                geometry="primitive: sphere; radius: 65;"
+                material="shader: skyGradient; colorTop: #353449; colorBottom: #BC483E; side: back"></a-entity>
+      <a-entity id="floorLeft"
+                position="-5 0 0"
+                geometry="primitive: box; width: 10; depth: 10; height: 0.1"
+                material="src: url(../common/pavement.jpg); repeat: 40 40; color: #ff0000">
+      </a-entity>
+      <a-entity id="floorRight"
+                position="5 0 0"
+                geometry="primitive: box; width: 10; depth: 10; height: 0.1"
+                material="src: url(../common/pavement.jpg); repeat: 40 40; color: #0000ff">
+      </a-entity>
+      <a-entity
+                geometry="primitive: box; width: 1.5; height: 1.5; depth: 1.5"
+                position= "6.5 0 5";
+                material="color: #00f">
+      </a-entity>
+      <a-entity id="hintEntity"
+            geometry="primitive: icosahedron; detail:1; radius: 0.25"
+            material="color: #ff9999; flatShading:true;">
+      </a-entity>
+
+      <!-- hand controls -->
+      <a-entity id="left-hand"
+                teleport="collisionMesh: #floorLeft;
+                hitColor: #ff9999;
+                missColor: #ff0000;
+                hitEntity: #hintEntity;"
+                vive-controls="hand: left">
+      </a-entity>
+      <a-entity id="right-hand"
+                teleport="collisionMesh: #floorRight;
+                button: trigger;
+                hitColor: #9999ff;
+                missColor: #ff0000;
+                numberPoints: 50;
+                lineWidth: 0.015;
+                shootingSpeed: 8"
+            vive-controls="hand: right">
+      </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
