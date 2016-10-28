@@ -1,7 +1,7 @@
 # aframe-teleport-component
 Teleport component (Work in progress)
 
-![Screenshot](https://.png)
+![Screenshot](https://github.com/fernandojsg/aframe-teleport-component/raw/master/teleport.png)
 
 ## Properties
 
