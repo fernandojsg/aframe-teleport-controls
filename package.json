@@ -13,8 +13,7 @@
      "prepublish": "npm run dist",
      "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",
      "ghpages": "npm run preghpages && ghpages -p gh-pages",
-     "start": "npm run dev",
-     "unboil": "node scripts/unboil.js"
+     "start": "npm run dev"
   },
   "repository": {
     "type": "git",
