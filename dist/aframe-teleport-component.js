@@ -60,14 +60,13 @@
 	    hitEntity: {type: 'selector'},
 	    hitCylinderColor: {type: 'color', default: '#99ff99'},
 	    hitCylinderRadius: {default: 0.25},
+	    curveNumberPoints: {default: 30},
+	    curveLineWidth: {default: 0.025},
 	    curveHitColor: {type: 'color', default: '#99ff99'},
 	    curveMissColor: {type: 'color', default: '#ff0000'},
-	    curveNumberPoints: {default: 30},
-	    maxDistance: {default: 5},
-	    curveLineWidth: {default: 0.025},
-	    normal: {type: 'vec3', default: '0 1 0'},
-	    landingMaxAngle: {default: '45'},
 	    curveShootingSpeed: {default: 5},
+	    landingNormal: {type: 'vec3', default: '0 1 0'},
+	    landingMaxAngle: {default: '45'}
 	  },
 
 	  init: function () {
@@ -133,7 +132,7 @@
 	  },
 
 	  update: function (oldData) {
-	    this.referenceNormal.copy(this.data.normal);
+	    this.referenceNormal.copy(this.data.landingNormal);
 	    this.curveMissColor.set(this.data.curveMissColor);
 	    this.curveHitColor.set(this.data.curveHitColor);
 
@@ -150,7 +149,7 @@
 	  },
 
 	  remove: function () {
-	    //@todo Remove entities created
+	    // @todo Remove entities created
 	  },
 
 	  tick: (function () {
@@ -193,9 +192,7 @@
 
 	        // Check intersection with the floor
 	        var floor = this.data.collisionEntity && this.data.collisionEntity.getObject3D('mesh');
-	        if (!floor) {
-	          floor = this.defaultPlane
-	        }
+	        if (!floor) { floor = this.defaultPlane; }
 	        var intersects = this.raycaster.intersectObject(floor, true);
 
 	        if (intersects.length > 0 && !this.hit && this.isValidNormalsAngle(intersects[0].face.normal)) {
@@ -256,9 +253,9 @@
 	  createDefaultPlane: function () {
 	    // @hack: Because I can't get three.bufferPlane working on raycaster
 	    var geometry = new THREE.BoxBufferGeometry(100, 0.5, 100);
-	    geometry.applyMatrix( new THREE.Matrix4().makeTranslation( 0, -0.25, 0 ) );
+	    geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, -0.25, 0));
 	    var material = new THREE.MeshBasicMaterial({color: 0xffff00});
-	    var box = new THREE.Mesh( geometry, material );
+	    var box = new THREE.Mesh(geometry, material);
 	    return box;
 	  }
 	});
