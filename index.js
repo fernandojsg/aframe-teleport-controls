@@ -120,9 +120,10 @@ AFRAME.registerComponent('teleport', {
       var matrixWorld = this.obj.matrixWorld;
       matrixWorld.decompose(translation, quaternion, scale);
 
-      var v0 = shootAngle.set(0, 0, -1)
-        .applyQuaternion(quaternion)
-        .multiplyScalar(this.data.curveShootingSpeed);
+      var direction = shootAngle.set(0, 0, -1)
+        .applyQuaternion(quaternion).normalize();
+      this.line.setDirection(direction);
+      var v0 = direction.clone().multiplyScalar(this.data.curveShootingSpeed);
       var g = -9.8;
       var a = new THREE.Vector3(0, g, 0);
       p0.copy(this.obj.position);
@@ -169,7 +170,6 @@ AFRAME.registerComponent('teleport', {
         }
         last.copy(next);
       }
-      this.line.update();
     };
   })(),
 
