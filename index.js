@@ -9,12 +9,12 @@ if (typeof AFRAME === 'undefined') {
 /* global THREE AFRAME  */
 AFRAME.registerComponent('teleport', {
   schema: {
+    type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
     button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
     collisionEntity: {type: 'selector'},
     hitEntity: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25},
-    type: {default: 'line', oneOf: ['parabolic', 'line']},
     maxLength: {default: 10, if: {type: ['line']}},
     curveNumberPoints: {default: 30, if: {type: ['parabolic']}},
     curveLineWidth: {default: 0.025},

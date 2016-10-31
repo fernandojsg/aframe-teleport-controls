@@ -7,6 +7,7 @@ Teleport component (Work in progress)
 
 | Property    | Description                     | Default Value    |
 | --------    | -----------                     | -------------    |
+| type       | Type of teleport: line or parabolic         | parabolic   |
 | button       | Button used to launch the teleport         | trackpad   |
 | collisionEntity | Selector of the mesh used to check the collisions. If no value provided a plane Y=0 is used |  |
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
@@ -17,6 +18,7 @@ Teleport component (Work in progress)
 | curveNumberPoints | Number of points used in the curve | 30          |
 | curveLineWidth | Line width of the curve | 0.025          |
 | curveShootingSpeed | Curve shooting speed, as bigger value, farther distance. | 5          |
+| maxLength | Max length of the ray when using type=line teleport | 10 |
 | landingNormal | Normal vector to detect collisions with the `collisionEntity` | (0, 1, 0)          |
 | landingMaxAngle | Angle threshold (in degrees) used together with `landingNormal` to detect if the mesh is so steep to jump to it. | 45          |
 
