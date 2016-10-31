@@ -127,7 +127,7 @@ AFRAME.registerComponent('teleport', {
 
       var direction = shootAngle.set(0, 0, -1)
         .applyQuaternion(quaternion).normalize();
-      this.line.setDirection(direction);
+      this.line.setDirection(direction.clone());
       p0.copy(this.obj.position);
 
       var last = p0.clone();
@@ -156,9 +156,9 @@ AFRAME.registerComponent('teleport', {
           last.copy(next);
         }
       } else if (this.data.type === 'line') {
-        next = last.add(direction.multiplyScalar(this.data.maxLength));
-        //this.raycaster.far = Infinity;
-        this.raycaster.far = 20;
+        next = last.add(direction.clone().multiplyScalar(this.data.maxLength));
+        this.raycaster.far = this.data.maxLength;
+
         this.raycaster.set(p0, direction);
         this.line.setPoint(0, p0);
 
@@ -172,7 +172,6 @@ AFRAME.registerComponent('teleport', {
     var floor = this.data.collisionEntity && this.data.collisionEntity.getObject3D('mesh');
     if (!floor) { floor = this.defaultPlane; }
     var intersects = this.raycaster.intersectObject(floor, true);
-    console.log(intersects);
     if (intersects.length > 0 && !this.hit && this.isValidNormalsAngle(intersects[0].face.normal)) {
       var point = intersects[0].point;
 
@@ -235,3 +234,10 @@ AFRAME.registerComponent('teleport', {
     return box;
   }
 });
+/*
+THREE.Ray.prototype.intersectsSphere = function ( sphere ) {
+
+	return this.distanceToPoint( sphere.center ) <= sphere.radius;
+
+};
+*/

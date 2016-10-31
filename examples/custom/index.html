@@ -23,14 +23,9 @@
                 geometry="primitive: box; width: 10; depth: 10; height: 0.1"
                 material="src: url(../common/pavement.jpg); repeat: 40 40; color: #0000ff">
       </a-entity>
-      <a-entity
-                geometry="primitive: box; width: 1.5; height: 1.5; depth: 1.5"
-                position= "6.5 0 5";
-                material="color: #00f">
-      </a-entity>
       <a-entity id="hintEntity"
-            geometry="primitive: icosahedron; detail:1; radius: 0.25"
-            material="color: #ff9999; flatShading:true;">
+            geometry="primitive: sphere; radius: 0.125"
+            material="color: #ff9999;">
       </a-entity>
 
       <!-- hand controls -->
@@ -38,6 +33,8 @@
                 teleport="collisionEntity: #floorLeft;
                 curveHitColor: #ff9999;
                 curveMissColor: #ff0000;
+                maxLength: 30;
+                type: line;
                 hitEntity: #hintEntity;"
                 vive-controls="hand: left">
       </a-entity>
@@ -48,9 +45,8 @@
                 curveMissColor: #ff0000;
                 curveNumberPoints: 50;
                 curveLineWidth: 0.015;
-                curveShootingSpeed: 8"
+                curveShootingSpeed: 4"
             vive-controls="hand: right">
-      </a-entity>
       </a-entity>
     </a-scene>
   </body>
