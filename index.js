@@ -79,12 +79,14 @@ AFRAME.registerComponent('teleport', {
     // Find the hands and move them proportionally
     var hands = document.querySelectorAll('a-entity[tracked-controls]');
     for (var i = 0; i < hands.length; i++) {
-      var position = hands[ i ].getAttribute('position');
+      var position = hands[i].getAttribute('position');
       var pos = new THREE.Vector3().copy(position);
       var diff = camPosition.clone().sub(pos);
       var newPosition = newCamPosition.clone().sub(diff);
-      hands[ i ].setAttribute('position', newPosition);
+      hands[i].setAttribute('position', newPosition);
     }
+
+    this.el.emit('teleported', {oldCamPosition: camPosition, newCamPosition: newCamPosition, hitPoint: this.hitPoint});
   },
 
   update: function (oldData) {
