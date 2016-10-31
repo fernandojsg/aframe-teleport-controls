@@ -14,11 +14,13 @@ AFRAME.registerComponent('teleport', {
     hitEntity: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25},
-    curveNumberPoints: {default: 30},
+    type: {default: 'line', oneOf: ['parabolic', 'line']},
+    maxLength: {default: 10, if: {type: ['line']}},
+    curveNumberPoints: {default: 30, if: {type: ['parabolic']}},
     curveLineWidth: {default: 0.025},
     curveHitColor: {type: 'color', default: '#99ff99'},
     curveMissColor: {type: 'color', default: '#ff0000'},
-    curveShootingSpeed: {default: 5},
+    curveShootingSpeed: {default: 5, if: {type: ['parabolic']}},
     landingNormal: {type: 'vec3', default: '0 1 0'},
     landingMaxAngle: {default: '45'}
   },
@@ -123,9 +125,6 @@ AFRAME.registerComponent('teleport', {
       var direction = shootAngle.set(0, 0, -1)
         .applyQuaternion(quaternion).normalize();
       this.line.setDirection(direction);
-      var v0 = direction.clone().multiplyScalar(this.data.curveShootingSpeed);
-      var g = -9.8;
-      var a = new THREE.Vector3(0, g, 0);
       p0.copy(this.obj.position);
 
       var last = p0.clone();
@@ -137,41 +136,59 @@ AFRAME.registerComponent('teleport', {
       this.hitEntity.setAttribute('visible', false);
       this.hit = false;
 
-      for (var i = 0; i < this.line.numPoints; i++) {
-        var t = i / (this.line.numPoints - 1);
-        next = parabolicCurve(p0, v0, a, t);
-        // Update the raycaster with the length of the current segment last->next
-        var dirLastNext = lastNext.copy(next).sub(last).normalize();
-        this.raycaster.far = dirLastNext.length();
-        this.raycaster.set(last, dirLastNext);
+      if (this.data.type === 'parabolic') {
+        var v0 = direction.clone().multiplyScalar(this.data.curveShootingSpeed);
+        var g = -9.8;
+        var a = new THREE.Vector3(0, g, 0);
 
-        // Check intersection with the floor
-        var floor = this.data.collisionEntity && this.data.collisionEntity.getObject3D('mesh');
-        if (!floor) { floor = this.defaultPlane; }
-        var intersects = this.raycaster.intersectObject(floor, true);
+        for (var i = 0; i < this.line.numPoints; i++) {
+          var t = i / (this.line.numPoints - 1);
+          next = parabolicCurve(p0, v0, a, t);
+          // Update the raycaster with the length of the current segment last->next
+          var dirLastNext = lastNext.copy(next).sub(last).normalize();
+          this.raycaster.far = dirLastNext.length();
+          this.raycaster.set(last, dirLastNext);
 
-        if (intersects.length > 0 && !this.hit && this.isValidNormalsAngle(intersects[0].face.normal)) {
-          var point = intersects[0].point;
-
-          this.line.material.color.set(this.curveHitColor);
-          this.hitEntity.setAttribute('position', point);
-          this.hitEntity.setAttribute('visible', true);
-
-          this.hit = true;
-          this.hitPoint.copy(intersects[0].point);
-
-          // If hit, just fill the rest of the points with the hit point and break the loop
-          for (var j = i; j < this.line.numPoints; j++) {
-            this.line.setPoint(j, this.hitPoint);
-          }
-          break;
-        } else {
-          this.line.setPoint(i, next);
+          if (this.checkMeshCollision(i, next)) { break; }
+          last.copy(next);
         }
-        last.copy(next);
+      } else if (this.data.type === 'line') {
+        next = last.add(direction.multiplyScalar(this.data.maxLength));
+        this.raycaster.far = this.data.maxLength;
+        this.raycaster.set(p0, direction);
+        this.line.setPoint(0, p0);
+
+        this.checkMeshCollision(1, next);
       }
     };
   })(),
+
+  checkMeshCollision: function (i, next) {
+    // Check intersection with the floor
+    var floor = this.data.collisionEntity && this.data.collisionEntity.getObject3D('mesh');
+    if (!floor) { floor = this.defaultPlane; }
+    var intersects = this.raycaster.intersectObject(floor, true);
+
+    if (intersects.length > 0 && !this.hit && this.isValidNormalsAngle(intersects[0].face.normal)) {
+      var point = intersects[0].point;
+
+      this.line.material.color.set(this.curveHitColor);
+      this.hitEntity.setAttribute('position', point);
+      this.hitEntity.setAttribute('visible', true);
+
+      this.hit = true;
+      this.hitPoint.copy(intersects[0].point);
+
+      // If hit, just fill the rest of the points with the hit point and break the loop
+      for (var j = i; j < this.line.numPoints; j++) {
+        this.line.setPoint(j, this.hitPoint);
+      }
+      return true;
+    } else {
+      this.line.setPoint(i, next);
+      return false;
+    }
+  },
 
   isValidNormalsAngle: function (collisionNormal) {
     var angleNormals = this.referenceNormal.angleTo(collisionNormal);
@@ -179,7 +196,8 @@ AFRAME.registerComponent('teleport', {
   },
 
   createLine: function () {
-    this.line = new RayCurve(this.data.curveNumberPoints, this.data.curveLineWidth);
+    var numPoints = this.data.type === 'line' ? 2 : this.data.curveNumberPoints;
+    this.line = new RayCurve(numPoints, this.data.curveLineWidth);
     this.teleportEntity.setObject3D('mesh', this.line.mesh);
   },
 
