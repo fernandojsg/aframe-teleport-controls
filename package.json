@@ -8,6 +8,7 @@
   "scripts": {
     "build": "cross-env NODE_ENV=production webpack",
     "start": "webpack-dev-server --progress --colors --hot -d --open --inline --content-base examples",
+    "dist": "webpack index.js dist/aframe-teleport-component.js && webpack -p index.js dist/aframe-teleport-component.min.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",
     "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",

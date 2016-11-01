@@ -234,10 +234,3 @@ AFRAME.registerComponent('teleport', {
     return box;
   }
 });
-/*
-THREE.Ray.prototype.intersectsSphere = function ( sphere ) {
-
-	return this.distanceToPoint( sphere.center ) <= sphere.radius;
-
-};
-*/
