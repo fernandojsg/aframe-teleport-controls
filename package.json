@@ -1,14 +1,14 @@
 {
-  "name": "aframe-teleport-component",
+  "name": "aframe-teleport-controls",
   "version": "0.1.0",
-  "description": "A-Frame teleport component",
+  "description": "A-Frame teleport controls component",
   "author": "Fernando Serrano <fernandojsg@gmail.com> (http://fernandojsg.com/)",
   "license": "MIT",
   "main": "index.js",
   "scripts": {
     "build": "cross-env NODE_ENV=production webpack --config webpack.dev.js",
     "start": "webpack-dev-server --config webpack.dev.js --progress --colors --hot -d --open --inline --content-base examples",
-    "dist": "webpack index.js dist/aframe-teleport-component.js && webpack -p index.js dist/aframe-teleport-component.min.js",
+    "dist": "webpack index.js dist/aframe-teleport-controls.js && webpack -p index.js dist/aframe-teleport-controls.min.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",
     "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fernandojsg/aframe-teleport-component.git"
+    "url": "git+https://github.com/fernandojsg/aframe-teleport-controls.git"
   },
   "peerDependencies": {
     "aframe": "^0.3.2"
@@ -32,9 +32,9 @@
     "mozvr"
   ],
   "bugs": {
-    "url": "https://github.com/fernandojsg/aframe-teleport-component/issues"
+    "url": "https://github.com/fernandojsg/aframe-teleport-controls/issues"
   },
-  "homepage": "https://github.com/fernandojsg/aframe-teleport-component#readme",
+  "homepage": "https://github.com/fernandojsg/aframe-teleport-controls#readme",
   "devDependencies": {
     "aframe": "^0.3.2",
     "cross-env": "^3.1.3",

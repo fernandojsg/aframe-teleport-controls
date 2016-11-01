@@ -1,7 +1,7 @@
-# aframe-teleport-component
+# aframe-teleport-controls
 Teleport component (Work in progress)
 
-![Screenshot](https://github.com/fernandojsg/aframe-teleport-component/raw/master/teleport.png)
+![Screenshot](https://github.com/fernandojsg/aframe-teleport-controls/raw/master/teleport.png)
 
 ## Properties
 
@@ -13,6 +13,8 @@ Teleport component (Work in progress)
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
 | hitCylinderRadius | Radius used for the default `hitEntity` primitives | 0.25          |
+| hitCylinderHeight | Height used for the default `hitEntity` primitives | 0.3 |
+| maxLength | Max. length for line teleport | 10 |
 | curveHitColor | Color used for the curve when hit the mesh | #99ff99          |
 | curveMissColor | Color used for the curve when it doesn't hit anything | #ff0000          |
 | curveNumberPoints | Number of points used in the curve | 30          |
@@ -32,12 +34,12 @@ Install and use by directly including the [browser files](dist):
 <head>
   <title>My A-Frame Scene</title>
   <script src="https://aframe.io/releases/0.3.2/aframe.min.js"></script>
-  <script src="https://rawgit.com/fernandojsg/aframe-teleport-component/master/dist/aframe-teleport-component.min.js"></script>
+  <script src="https://rawgit.com/fernandojsg/aframe-teleport-controls/master/dist/aframe-teleport-controls.min.js"></script>
 </head>
 
 <body>
   <a-scene>
-    <a-entity teleport vive-controls="hand: left"></a-entity>
+    <a-entity teleport-controls vive-controls="hand: left"></a-entity>
   </a-scene>
 </body>
 ```
@@ -47,11 +49,11 @@ Install and use by directly including the [browser files](dist):
 Install via NPM:
 
 ```bash
-npm install aframe-teleport-component
+npm install aframe-teleport-controls
 ```
 
 Then register and use.
 
 ```js
-require('aframe-teleport-component');
+require('aframe-teleport-controls');
 ```
