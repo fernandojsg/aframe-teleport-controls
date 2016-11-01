@@ -30,7 +30,7 @@
 
       <!-- hand controls -->
       <a-entity id="left-hand"
-                teleport="collisionEntity: #floorLeft;
+                teleport-controls="collisionEntity: #floorLeft;
                 curveHitColor: #ff9999;
                 curveMissColor: #ff0000;
                 maxLength: 30;
@@ -39,7 +39,7 @@
                 vive-controls="hand: left">
       </a-entity>
       <a-entity id="right-hand"
-                teleport="collisionEntity: #floorRight;
+                teleport-controls="collisionEntity: #floorRight;
                 button: trigger;
                 curveHitColor: #9999ff;
                 curveMissColor: #ff0000;
