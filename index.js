@@ -7,23 +7,23 @@ if (typeof AFRAME === 'undefined') {
 }
 
 /* global THREE AFRAME  */
-AFRAME.registerComponent('teleport', {
+AFRAME.registerComponent('teleport-controls', {
   schema: {
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
     button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
     collisionEntity: {type: 'selector'},
     hitEntity: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
-    hitCylinderRadius: {default: 0.25},
-    hitCylinderHeight: {default: 0.3},
-    maxLength: {default: 10, if: {type: ['line']}},
-    curveNumberPoints: {default: 30, if: {type: ['parabolic']}},
+    hitCylinderRadius: {default: 0.25, min: 0},
+    hitCylinderHeight: {default: 0.3, min: 0},
+    maxLength: {default: 10, min: 0, if: {type: ['line']}},
+    curveNumberPoints: {default: 30, min: 2, if: {type: ['parabolic']}},
     curveLineWidth: {default: 0.025},
     curveHitColor: {type: 'color', default: '#99ff99'},
     curveMissColor: {type: 'color', default: '#ff0000'},
-    curveShootingSpeed: {default: 5, if: {type: ['parabolic']}},
+    curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
     landingNormal: {type: 'vec3', default: '0 1 0'},
-    landingMaxAngle: {default: '45'}
+    landingMaxAngle: {default: '45', min: 0, max: 360}
   },
 
   init: function () {
@@ -95,7 +95,9 @@ AFRAME.registerComponent('teleport', {
     this.curveMissColor.set(this.data.curveMissColor);
     this.curveHitColor.set(this.data.curveHitColor);
 
-    if (oldData.curveNumberPoints !== this.data.curveNumberPoints) {
+    if (oldData.curveNumberPoints !== this.data.curveNumberPoints
+      || oldData.type !== this.data.type
+      || oldData.curveLineWidth !== this.data.curveLineWidth) {
       this.createLine();
     }
 
