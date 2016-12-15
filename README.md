@@ -1,5 +1,5 @@
 # aframe-teleport-controls
-Teleport component (Work in progress)
+Teleport component
 
 ![Screenshot](https://github.com/fernandojsg/aframe-teleport-controls/raw/master/teleport.png)
 
