@@ -6,12 +6,17 @@ if (typeof AFRAME === 'undefined') {
   throw new Error('Component attempted to register before AFRAME was available.');
 }
 
+var buttons = ['trackpad', 'trigger', 'grip', 'menu', 'thumbstick', 'A', 'B', 'X', 'Y', 'surface', 'point', 'pointing', 'pistol', 'thumb'];
+var events = ['down', 'up', 'open', 'close', 'start', 'end', 'touchstart', 'touchend'];
+
 /* global THREE AFRAME  */
 AFRAME.registerComponent('teleport-controls', {
   schema: {
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
-    button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
-    collisionEntity: {type: 'selector'},
+    button: {default: 'pointing', oneOf: buttons},
+    startEvent: {default: 'start', oneOf: events},
+    endEvent: {default: 'end', oneOf: events},
+    collisionEntity: { type: 'selector' },
     hitEntity: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25, min: 0},
@@ -44,8 +49,8 @@ AFRAME.registerComponent('teleport-controls', {
     this.teleportEntity.setAttribute('visible', false);
     this.el.sceneEl.appendChild(this.teleportEntity);
 
-    this.el.addEventListener(this.data.button + 'down', this.onButtonDown.bind(this));
-    this.el.addEventListener(this.data.button + 'up', this.onButtonUp.bind(this));
+    this.el.addEventListener(this.data.button + this.data.startEvent, this.onButtonDown.bind(this));
+    this.el.addEventListener(this.data.button + this.data.endEvent, this.onButtonUp.bind(this));
   },
 
   onButtonDown: function (evt) {
