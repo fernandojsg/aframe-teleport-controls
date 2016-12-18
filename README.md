@@ -8,7 +8,9 @@ Teleport component
 | Property    | Description                     | Default Value    |
 | --------    | -----------                     | -------------    |
 | type       | Type of teleport: line or parabolic         | parabolic   |
-| button       | Button used to launch the teleport         | trackpad   |
+| button       | Button used to launch the teleport         | pointing   |
+| startEvent   | Start event used to launch the teleport         | start   |
+| endEvent   | Start event used to launch the teleport         | end   |
 | collisionEntity | Selector of the mesh used to check the collisions. If no value provided a plane Y=0 is used |  |
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
@@ -39,7 +41,7 @@ Install and use by directly including the [browser files](dist):
 
 <body>
   <a-scene>
-    <a-entity teleport-controls vive-controls="hand: left"></a-entity>
+    <a-entity teleport-controls hand-controls="left"></a-entity>
   </a-scene>
 </body>
 ```
