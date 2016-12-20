@@ -18,6 +18,7 @@ AFRAME.registerComponent('teleport-controls', {
     endEvent: {default: 'end', oneOf: events},
     collisionEntity: { type: 'selector' },
     hitEntity: {type: 'selector'},
+    defaultPlaneSize: {default: 5000},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25, min: 0},
     hitCylinderHeight: {default: 0.3, min: 0},
@@ -234,7 +235,7 @@ AFRAME.registerComponent('teleport-controls', {
 
   createDefaultPlane: function () {
     // @hack: Because I can't get three.bufferPlane working on raycaster
-    var geometry = new THREE.BoxBufferGeometry(100, 0.5, 100);
+    var geometry = new THREE.BoxBufferGeometry(this.data.defaultPlaneSize, 0.5, this.defaultPlaneSize);
     geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, -0.25, 0));
     var material = new THREE.MeshBasicMaterial({color: 0xffff00});
     var box = new THREE.Mesh(geometry, material);
