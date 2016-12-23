@@ -17,6 +17,7 @@ AFRAME.registerComponent('teleport-controls', {
     startEvent: {default: 'start', oneOf: events},
     endEvent: {default: 'end', oneOf: events},
     collisionEntity: { type: 'selector' },
+    objects: {default: ''},
     hitEntity: {type: 'selector'},
     defaultPlaneSize: {default: 5000},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
@@ -42,6 +43,7 @@ AFRAME.registerComponent('teleport-controls', {
     this.curveMissColor = new THREE.Color();
     this.curveHitColor = new THREE.Color();
     this.raycaster = new THREE.Raycaster();
+    this.refreshObjects = this.refreshObjects.bind(this);
 
     this.defaultPlane = this.createDefaultPlane();
 
@@ -96,6 +98,16 @@ AFRAME.registerComponent('teleport-controls', {
     this.el.emit('teleported', {oldCamPosition: camPosition, newCamPosition: newCamPosition, hitPoint: this.hitPoint});
   },
 
+  play: function () {
+    this.el.sceneEl.addEventListener('child-attached', this.refreshObjects);
+    this.el.sceneEl.addEventListener('child-detached', this.refreshObjects);
+  },
+
+  pause: function () {
+    this.el.sceneEl.removeEventListener('child-attached', this.refreshObjects);
+    this.el.sceneEl.removeEventListener('child-detached', this.refreshObjects);
+  },
+
   update: function (oldData) {
     this.referenceNormal.copy(this.data.landingNormal);
     this.curveMissColor.set(this.data.curveMissColor);
@@ -113,8 +125,32 @@ AFRAME.registerComponent('teleport-controls', {
       this.hitEntity = this.createHitEntity();
     }
     this.hitEntity.setAttribute('visible', false);
+
+    this.refreshObjects();
   },
 
+  /**
+   * Update list of objects to test for intersection.
+   **/
+  refreshObjects: function () {
+    var data = this.data;
+    var i;
+    var objectEls;
+
+    // Push meshes onto list of objects to intersect.
+    if (data.objects) {
+      objectEls = this.el.sceneEl.querySelectorAll(data.objects);
+      this.objects = [];
+      for (i = 0; i < objectEls.length; i++) {
+        this.objects.push(objectEls[i].object3D);
+      }
+      return;
+    }
+ 
+    // If objects not defined, intersect with everything.
+    this.objects = this.el.sceneEl.object3D.children;
+  },
+ 
   remove: function () {
     // @todo Remove entities created
   },
@@ -176,28 +212,52 @@ AFRAME.registerComponent('teleport-controls', {
   })(),
 
   checkMeshCollision: function (i, next) {
-    // Check intersection with the floor
-    var floor = this.data.collisionEntity && this.data.collisionEntity.getObject3D('mesh');
-    if (!floor) { floor = this.defaultPlane; }
-    var intersects = this.raycaster.intersectObject(floor, true);
-    if (intersects.length > 0 && !this.hit && this.isValidNormalsAngle(intersects[0].face.normal)) {
+    // The original function only returned true/false;
+    // and for parabolic arc, each segment is checked until true.
+    // So we were able to go through walls if a segment AFTER THAT ONE hit collisionEntity!
+    // To fix that, change to tri-state return:
+    //  0 = no intersection
+    //  1 = hit collisionEntity
+    // -1 = hit something else (so stop checking) -- this is what was missing.
+
+    // Check if we intersected with any objects.
+    var collisionEntity = this.data.collisionEntity;
+    var collisionEntityIsFirst = false;
+    var intersects;
+    if (collisionEntity) {
+      intersects = this.raycaster.intersectObjects(this.objects, true);
+      // Only keep intersections against objects that have a reference to an entity.
+      intersects = intersects.filter(function hasEl (intersection) { return !!intersection.object.el; });
+      collisionEntityIsFirst = intersects.length > 0 && collisionEntity === intersects[0].object.el;
+    } else {
+      intersects = this.raycaster.intersectObject(this.defaultPlane, true);
+      collisionEntityIsFirst = intersects.length > 0;
+    }
+    // Check to see if we intersected the 'floor' *first*.
+    if (intersects.length > 0) {
       var point = intersects[0].point;
+
+      // fill the rest of the points with the hit point
+      this.hitPoint.copy(intersects[0].point);
+      for (var j = i; j < this.line.numPoints; j++) {
+          this.line.setPoint(j, this.hitPoint);
+      }
+
+      // if we got something other than the collisionEntity,
+      // or invalid valid angle, or already have a hit,
+      // bail out early, don't count it!
+      if (!collisionEntityIsFirst || !this.isValidNormalsAngle(intersects[0].face.normal) || this.hit) {
+        return -1;
+      }
 
       this.line.material.color.set(this.curveHitColor);
       this.hitEntity.setAttribute('position', point);
       this.hitEntity.setAttribute('visible', true);
-
       this.hit = true;
-      this.hitPoint.copy(intersects[0].point);
-
-      // If hit, just fill the rest of the points with the hit point and break the loop
-      for (var j = i; j < this.line.numPoints; j++) {
-        this.line.setPoint(j, this.hitPoint);
-      }
-      return true;
+      return 1;
     } else {
       this.line.setPoint(i, next);
-      return false;
+      return 0;
     }
   },
 
