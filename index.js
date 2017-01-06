@@ -19,6 +19,7 @@ AFRAME.registerComponent('teleport-controls', {
     collisionEntity: { type: 'selector' },
     objects: {default: ''},
     hitEntity: {type: 'selector'},
+    playerEntity: { type: 'selector' },
     defaultPlaneSize: {default: 5000},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25, min: 0},
@@ -75,6 +76,8 @@ AFRAME.registerComponent('teleport-controls', {
       return;
     }
 
+    // make sure world matrix is updated
+    this.el.sceneEl.object3D.updateMatrixWorld();
     // @todo Create this aux vectors outside
     var cameraEl = this.el.sceneEl.camera.el;
     var camPosition = new THREE.Vector3().copy(cameraEl.getAttribute('position'));
@@ -83,25 +86,33 @@ AFRAME.registerComponent('teleport-controls', {
     // account for user height that the camera is supposed to be enforcing
     // (TODO: which should be how high they are off the ground right now, really)
     // (this.prevHeightDiff was trying to represent that value, but didn't handle world position)
-    var yoffset = cameraEl.components.camera.data.userHeight;
+    var yoffset = camPosition.y; // cameraEl.components.camera.data.userHeight;
     var newCamPositionY = camPosition.y + yoffset - camWorldPosition.y + this.hitPoint.y;
     var newCamPosition = new THREE.Vector3(this.hitPoint.x + camPosition.x - camWorldPosition.x, newCamPositionY, this.hitPoint.z + camPosition.z - camWorldPosition.z);
+    var playerEl = this.data.playerEntity;
+    if (playerEl) {
+      // move the player, not the camera and controllers all separately
+      var playerPosition = new THREE.Vector3().copy(playerEl.getAttribute('position'));
+      var newPlayerPosition = new THREE.Vector3().copy(newCamPosition).sub(camPosition).add(playerPosition);
+      playerEl.setAttribute('position', newPlayerPosition);
+      this.el.emit('teleported', {oldPlayerPosition: playerPosition, newPlayerPosition: newPlayerPosition, hitPoint: this.hitPoint});
+    } else {
+      cameraEl.setAttribute('position', newCamPosition);
 
-    cameraEl.setAttribute('position', newCamPosition);
+      // Find the hands and move them proportionally
+      var hands = this.el.sceneEl.querySelectorAll('a-entity[tracked-controls]');
+      for (var i = 0; i < hands.length; i++) {
+        // make sure we don't move the camera twice
+        if (hands[i] === cameraEl) { continue; }
+        var position = hands[i].getAttribute('position');
+        var pos = new THREE.Vector3().copy(position);
+        var diff = camPosition.clone().sub(pos);
+        var newPosition = newCamPosition.clone().sub(diff);
+        hands[i].setAttribute('position', newPosition);
+      }
 
-    // Find the hands and move them proportionally
-    var hands = this.el.sceneEl.querySelectorAll('a-entity[tracked-controls]');
-    for (var i = 0; i < hands.length; i++) {
-      // make sure we don't move the camera twice
-      if (hands[i] === cameraEl) { continue; }
-      var position = hands[i].getAttribute('position');
-      var pos = new THREE.Vector3().copy(position);
-      var diff = camPosition.clone().sub(pos);
-      var newPosition = newCamPosition.clone().sub(diff);
-      hands[i].setAttribute('position', newPosition);
+      this.el.emit('teleported', {oldCamPosition: camPosition, newCamPosition: newCamPosition, hitPoint: this.hitPoint});
     }
-
-    this.el.emit('teleported', {oldCamPosition: camPosition, newCamPosition: newCamPosition, hitPoint: this.hitPoint});
   },
 
   play: function () {
