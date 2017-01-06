@@ -11,6 +11,7 @@ Teleport component
 | button       | Button used to launch the teleport         | pointing   |
 | startEvent   | Start event used to launch the teleport         | start   |
 | endEvent   | Start event used to launch the teleport         | end   |
+| playerEntity | Selector of the player entity to be moved when teleporting.  If not provided, the camera and entities with tracked-controls will be moved individually. |  |
 | collisionEntity | Selector of the mesh used to check the collisions. If no value provided a plane Y=0 is used |  |
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
