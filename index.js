@@ -12,6 +12,7 @@ var events = ['down', 'up', 'open', 'close', 'start', 'end', 'touchstart', 'touc
 /* global THREE AFRAME  */
 AFRAME.registerComponent('teleport-controls', {
   schema: {
+    enabled: {default: true, type:  'boolean'},
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
     button: {default: 'pointing', oneOf: buttons},
     startEvent: {default: 'start', oneOf: events},
@@ -53,12 +54,14 @@ AFRAME.registerComponent('teleport-controls', {
     this.teleportEntity.setAttribute('visible', false);
     this.el.sceneEl.appendChild(this.teleportEntity);
 
-    this.el.addEventListener(this.data.button + this.data.startEvent, this.onButtonDown.bind(this));
-    this.el.addEventListener(this.data.button + this.data.endEvent, this.onButtonUp.bind(this));
+    this.onButtonDown = this.onButtonDown.bind(this);
+    this.onButtonUp = this.onButtonUp.bind(this);
+    this.el.addEventListener(this.data.button + this.data.startEvent, this.onButtonDown);
+    this.el.addEventListener(this.data.button + this.data.endEvent, this.onButtonUp);
   },
 
   onButtonDown: function (evt) {
-    this.active = true;
+    this.active = this.data.enabled;
   },
 
   onButtonUp: function (evt) {
@@ -143,6 +146,18 @@ AFRAME.registerComponent('teleport-controls', {
     }
     this.hitEntity.setAttribute('visible', false);
 
+    if (!this.data.enabled) { this.active = false; }
+
+    if (oldData.button !== this.data.button
+     || oldData.startEvent !== this.data.startEvent) {
+      this.el.removeEventListener(oldData.button + oldData.startEvent, this.onButtonDown);
+      this.el.addEventListener(this.data.button + this.data.startEvent, this.onButtonDown);
+    }
+    if (oldData.button !== this.data.button
+     || oldData.endEvent !== this.data.endEvent) {
+      this.el.removeEventListener(oldData.button + oldData.endEvent, this.onButtonUp);
+      this.el.addEventListener(this.data.button + this.data.endEvent, this.onButtonUp);
+    }
     this.refreshObjects();
   },
 
