@@ -11,7 +11,7 @@ AFRAME.registerComponent('teleport-controls', {
   schema: {
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
     button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
-    collisionEntity: {type: 'selector'},
+    collisionEntities: {type: 'selectorAll'},
     hitEntity: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25, min: 0},
@@ -154,7 +154,7 @@ AFRAME.registerComponent('teleport-controls', {
           this.raycaster.far = dirLastNext.length();
           this.raycaster.set(last, dirLastNext);
 
-          if (this.checkMeshCollision(i, next)) { break; }
+          if (this.checkMeshCollisions(i, next)) { break; }
           last.copy(next);
         }
       } else if (this.data.type === 'line') {
@@ -164,16 +164,20 @@ AFRAME.registerComponent('teleport-controls', {
         this.raycaster.set(p0, direction);
         this.line.setPoint(0, p0);
 
-        this.checkMeshCollision(1, next);
+        this.checkMeshCollisions(1, next);
       }
     };
   })(),
 
-  checkMeshCollision: function (i, next) {
-    // Check intersection with the floor
-    var floor = this.data.collisionEntity && this.data.collisionEntity.getObject3D('mesh');
-    if (!floor) { floor = this.defaultPlane; }
-    var intersects = this.raycaster.intersectObject(floor, true);
+  checkMeshCollisions: function (i, next) {
+    // Gather the meshes here to avoid having to wait for entities to iniitalize.
+    var meshes = this.data.collisionEntities.map(function (entity) {
+      return entity.getObject3D('mesh');
+    }).filter(function (n) { return n; });
+    meshes = meshes.length ? meshes : [this.defaultPlane];
+
+    const intersects = this.raycaster.intersectObjects(meshes, true);
+
     if (intersects.length > 0 && !this.hit && this.isValidNormalsAngle(intersects[0].face.normal)) {
       var point = intersects[0].point;
 

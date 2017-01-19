@@ -23,7 +23,7 @@
                 geometry="primitive: sphere; radius: 1;"
                 position= "-5 0 -5"
                 material="color: #f00">
-      </a-entity>ass
+      </a-entity>
       <a-entity
                 geometry="primitive: box; width: 6; height: 1.5"
                 position= "-3 0 6"
@@ -40,11 +40,11 @@
 
       <!-- hand controls -->
       <a-entity id="left-hand"
-                teleport-controls="collisionEntity: #floorgeometry"
+                teleport-controls="collisionEntities: #floorgeometry"
                 vive-controls="hand: left">
       </a-entity>
       <a-entity id="right-hand"
-                teleport-controls="collisionEntity: #floorgeometry"
+                teleport-controls="collisionEntities: #floorgeometry"
                 vive-controls="hand: right">
       </a-entity>
       </a-entity>
