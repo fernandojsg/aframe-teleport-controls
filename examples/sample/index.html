@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="../build.js"></script>
+    <script src="../common/shaders/skyGradient.js"></script>
+
+<script>
+// any extras would go here
+
+
+AFRAME.registerComponent('auto-hand-controls', {
+//  dependencies: ['tracked-controls'], // to make sure the system is present
+
+  init: function () {
+    // to make sure the tracked-controls system is present, put it on the scene (NOT an entity)
+    this.el.sceneEl.setAttribute('tracked-controls', '');
+
+    this.tick = AFRAME.utils.throttleTick ?
+      AFRAME.utils.throttleTick(this.throttledTick, 1000, this) :
+      this.throttledTick.bind(this);
+  },
+
+  throttledTick: function (t, dt) {
+    var hands = [];
+    var singlehand = 'right';
+    var isPresent = true;
+    if (AFRAME.utils.trackedControls.isControllerPresent(this.el.sceneEl, undefined, {})) {
+      hands.push('left');
+      hands.push('right');
+    } else
+    if (AFRAME.utils.gearvrControls && AFRAME.utils.gearvrControls.isControllerPresent()) {
+      hands.push(singlehand);
+    } else {
+      isPresent = false;
+    }
+    if (this.isPresent === isPresent) { return; }
+    this.isPresent = isPresent;
+    if (isPresent) {
+      this.hand = this.hand || {};
+      hands.forEach(function (hand) {
+        var handEl = this.hand[hand] = document.createElement('a-entity');
+        handEl.setAttribute('id', hand + '-hand');
+        handEl.setAttribute('hand-controls', hand);
+        if (hand === singlehand && AFRAME.utils.gearvrControls) { handEl.setAttribute('gearvr-controls', ''); }
+        this.el.appendChild(handEl);
+      }, this);
+      this.el.emit('lookmanewhands', {hands: this.hand});
+    } else
+    if (this.hand) {
+      Object.keys(this.hand).forEach(function (hand) {
+        var handEl = this.hand && this.hand[hand];
+        if (handEl) {
+          delete this.hand[hand];
+          if (handEl.parentNode) { handEl.parentNode.removeChild(handEl); }
+        }
+      }, this);
+      this.el.emit('lookmanohands', {});
+    }
+  }
+});
+
+AFRAME.registerComponent('auto-hand-teleport-controls', {
+    dependencies: ['auto-hand-controls'],
+
+    init: function () {
+        this.el.addEventListener('lookmanewhands', this.onNewHands.bind(this));
+    },
+
+    onNewHands: function (evt) {
+        var hands = evt.detail && evt.detail.hands;
+        if (hands) {
+            Object.keys(hands).forEach(function (key) {
+                if (hands.hasOwnProperty(key)) {
+                    hands[key].setAttribute('teleport-controls', 'collisionEntity', '#ground');
+                }
+            });
+        }
+    }
+});
+
+// FIXME: broken!
+
+AFRAME.registerGeometry('triangle', {
+  schema: {vertices: {default: ['-10 10 0', '-10 -10 0', '10 -10 0']}},
+
+  init: function (data) {
+    var geometry = new THREE.Geometry();
+    geometry.vertices.push.call(
+      geometry.vertices,
+      data.vertices.map(function (vertex) {
+        var points = vertex.split(' ').map(parseFloat);
+        return new THREE.Vector3(points[0], points[1], points[2]);
+      })
+    );
+    geometry.faces.push(new THREE.Face3(0, 1, 2));
+    this.geometry = geometry;
+  }
+});
+
+</script>
+
+  </head>
+  <body style="background-color: #000">
+    <a-scene debug>
+
+    <a-entity id="player" position="1 -1 1" auto-hand-teleport-controls>
+        <a-camera></a-camera>
+    </a-entity>
+
+      <!-- scene geometry -->
+      <a-entity id="sky"
+                geometry="primitive: sphere; radius: 65;"
+                material="shader: skyGradient; colorTop: #aaa; colorBottom: #fff; side: back"></a-entity>
+      <a-entity id="floor"
+                rotation="-90 0 0"
+                geometry="primitive: plane; width: 100; height: 100"
+                material="src: url(floor.jpg); repeat: 80 80">
+      </a-entity>
+      <a-entity id="wall"
+                position="0 1 -3"
+                geometry="primitive: box"
+                material="color: blue">
+      </a-entity>
+      <a-entity scale="0.05 0.05 0.05"
+                position="0 0 0"
+                geometry="primitive: box"
+                material="color: green">
+      </a-entity>
+      <a-entity scale="0.05 0.05 0.05"
+                position="0 0 -1"
+                geometry="primitive: box"
+                material="color: red">
+      </a-entity>
+      <a-entity scale="0.05 0.05 0.05"
+                position="0 0 -2"
+                geometry="primitive: box"
+                material="color: red">
+      </a-entity>
+      <a-entity scale="0.05 0.05 0.05"
+                position="1 0 0"
+                geometry="primitive: box"
+                material="color: yellow">
+      </a-entity>
+      <a-entity scale="0.05 0.05 0.05"
+                position="1 0 -1"
+                geometry="primitive: box"
+                material="color: yellow">
+      </a-entity>
+      <a-entity scale="0.05 0.05 0.05"
+                position="1 0 -2"
+                geometry="primitive: box"
+                material="color: yellow">
+      </a-entity>
+      <!-- hand controls
+      <a-entity teleport-controls hand-controls="left"></a-entity>
+      <a-entity teleport-controls="type: line" hand-controls="right"></a-entity>
+      </a-entity>
+      -->
+    </a-scene>
+  </body>
+</html>

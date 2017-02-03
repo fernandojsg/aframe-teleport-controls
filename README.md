@@ -7,8 +7,12 @@ Teleport component
 
 | Property    | Description                     | Default Value    |
 | --------    | -----------                     | -------------    |
-| type       | Type of teleport: line or parabolic         | parabolic   |
-| button       | Button used to launch the teleport         | trackpad   |
+| enabled     | Whether this teleport control is enabled. | true |
+| type        | Type of teleport: line or parabolic         | parabolic   |
+| button      | Button used to launch the teleport         | pointing   |
+| startEvent  | Start event used to launch the teleport         | start   |
+| endEvent   | Start event used to launch the teleport         | end   |
+| playerEntity | Selector of the player entity to be moved when teleporting.  If not provided, the camera and entities with tracked-controls will be moved individually. |  |
 | collisionEntity | Selector of the mesh used to check the collisions. If no value provided a plane Y=0 is used |  |
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
@@ -33,13 +37,13 @@ Install and use by directly including the [browser files](dist):
 ```html
 <head>
   <title>My A-Frame Scene</title>
-  <script src="https://aframe.io/releases/0.3.2/aframe.min.js"></script>
+  <script src="https://aframe.io/releases/0.4.0/aframe.min.js"></script>
   <script src="https://rawgit.com/fernandojsg/aframe-teleport-controls/master/dist/aframe-teleport-controls.min.js"></script>
 </head>
 
 <body>
   <a-scene>
-    <a-entity teleport-controls vive-controls="hand: left"></a-entity>
+    <a-entity teleport-controls hand-controls="left"></a-entity>
   </a-scene>
 </body>
 ```

@@ -15,9 +15,14 @@
                 geometry="primitive: plane; width: 100; height: 100"
                 material="src: url(floor.jpg); repeat: 80 80">
       </a-entity>
+      <a-entity id="wall"
+                position="0 1 -3"
+                geometry="primitive: box"
+                material="color: blue">
+      </a-entity>
       <!-- hand controls -->
-      <a-entity teleport-controls vive-controls="hand: left"></a-entity>
-      <a-entity teleport-controls="type: line" vive-controls="hand: right"></a-entity>
+      <a-entity teleport-controls hand-controls="left"></a-entity>
+      <a-entity teleport-controls="type: line" hand-controls="right"></a-entity>
       </a-entity>
     </a-scene>
   </body>
