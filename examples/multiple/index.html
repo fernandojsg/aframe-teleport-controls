@@ -3,6 +3,7 @@
   <head>
     <script src="../build.js"></script>
     <script src="../common/shaders/skyGradient.js"></script>
+    <script src="https://rawgit.com/ngokevin/aframe-motion-capture/343f99/dist/aframe-motion-capture.min.js"></script>
   </head>
   <body style="background-color: #000">
     <script>
@@ -33,7 +34,7 @@
       });
     </script>
 
-    <a-scene>
+    <a-scene avatar-recorder>
       <a-assets>
         <a-mixin id="box" geometry="primitive: box; width: 2; height: 0.5; depth: 0.5" randomcolor></a-mixin>
         <a-mixin id="sphere" geometry="primitive: sphere; radius: 0.5" randomcolor></a-mixin>
@@ -53,8 +54,8 @@
 
       <!-- hand controls -->
       <a-mixin id="teleport" teleport-controls="type: parabolic; collisionEntities: [mixin='box'], [mixin='sphere']"></a-mixin>
-      <a-entity mixin="teleport" vive-controls="hand: left"></a-entity>
-      <a-entity mixin="teleport" vive-controls="hand: right"></a-entity>
+      <a-entity id="leftHand" mixin="teleport" vive-controls="hand: left"></a-entity>
+      <a-entity id="rightHand" mixin="teleport" vive-controls="hand: right"></a-entity>
       </a-entity>
     </a-scene>
   </body>
