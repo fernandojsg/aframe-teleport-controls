@@ -7,11 +7,26 @@ if (typeof AFRAME === 'undefined') {
   throw new Error('Component attempted to register before AFRAME was available.');
 }
 
+if (!Element.prototype.matches) {
+  Element.prototype.matches =
+    Element.prototype.matchesSelector ||
+    Element.prototype.mozMatchesSelector ||
+    Element.prototype.msMatchesSelector ||
+    Element.prototype.oMatchesSelector ||
+    Element.prototype.webkitMatchesSelector ||
+    function (s) {
+      var matches = (this.document || this.ownerDocument).querySelectorAll(s);
+      var i = matches.length;
+      while (--i >= 0 && matches.item(i) !== this) { /* no-op */ }
+      return i > -1;
+    };
+}
+
 AFRAME.registerComponent('teleport-controls', {
   schema: {
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
     button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
-    collisionEntities: {type: 'selectorAll'},
+    collisionEntities: {default: ''},
     hitEntity: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25, min: 0},
@@ -27,8 +42,12 @@ AFRAME.registerComponent('teleport-controls', {
   },
 
   init: function () {
+    var data = this.data;
+    var el = this.el;
+    var teleportEntity;
+
     this.active = false;
-    this.obj = this.el.object3D;
+    this.obj = el.object3D;
     this.hitPoint = new THREE.Vector3();
     this.hit = false;
     this.prevHeightDiff = 0;
@@ -39,13 +58,15 @@ AFRAME.registerComponent('teleport-controls', {
 
     this.defaultPlane = createDefaultPlane();
 
-    this.teleportEntity = document.createElement('a-entity');
-    this.teleportEntity.classList.add('teleportRay');
-    this.teleportEntity.setAttribute('visible', false);
-    this.el.sceneEl.appendChild(this.teleportEntity);
+    teleportEntity = this.teleportEntity = document.createElement('a-entity');
+    teleportEntity.classList.add('teleportRay');
+    teleportEntity.setAttribute('visible', false);
+    el.sceneEl.appendChild(this.teleportEntity);
 
-    this.el.addEventListener(this.data.button + 'down', this.onButtonDown.bind(this));
-    this.el.addEventListener(this.data.button + 'up', this.onButtonUp.bind(this));
+    el.addEventListener(data.button + 'down', this.onButtonDown.bind(this));
+    el.addEventListener(data.button + 'up', this.onButtonUp.bind(this));
+
+    this.queryCollisionEntities();
   },
 
   update: function (oldData) {
@@ -77,13 +98,20 @@ AFRAME.registerComponent('teleport-controls', {
       this.el.sceneEl.appendChild(this.hitEntity);
     }
     this.hitEntity.setAttribute('visible', false);
+
+    if ('collisionEntities' in diff) { this.queryCollisionEntities(); }
   },
 
   remove: function () {
+    var el = this.el;
     var hitEntity = this.hitEntity;
     var teleportEntity = this.teleportEntity;
+
     if (hitEntity) { hitEntity.parentNode.removeChild(hitEntity); }
     if (teleportEntity) { teleportEntity.parentNode.removeChild(teleportEntity); }
+
+    el.sceneEl.removeEventListener('child-attached', this.childAttachHandler);
+    el.sceneEl.removeEventListener('child-detached', this.childDetachHandler);
   },
 
   tick: (function () {
@@ -142,6 +170,41 @@ AFRAME.registerComponent('teleport-controls', {
     };
   })(),
 
+  /**
+   * Run `querySelectorAll` for `collisionEntities` and maintain it with `child-attached`
+   * and `child-detached` events.
+   */
+  queryCollisionEntities: function () {
+    var collisionEntities;
+    var data = this.data;
+    var el = this.el;
+
+    if (!data.collisionEntities) {
+      this.collisionEntities = [];
+      return
+    }
+
+    collisionEntities = [].slice.call(el.sceneEl.querySelectorAll(data.collisionEntities));
+    this.collisionEntities = collisionEntities;
+
+    // Update entity list on attach.
+    this.childAttachHandler = function childAttachHandler (evt) {
+      if (!evt.detail.el.matches(data.collisionEntities)) { return; }
+      collisionEntities.push(evt.detail.el);
+    };
+    el.sceneEl.addEventListener('child-attached', this.childAttachHandler);
+
+    // Update entity list on detach.
+    this.childDetachHandler = function childDetachHandler (evt) {
+      var index;
+      if (!evt.detail.el.matches(data.collisionEntities)) { return; }
+      index = collisionEntities.indexOf(evt.detail.el);
+      if (index === -1) { return; }
+      collisionEntities.splice(index, 1);
+    };
+    el.sceneEl.addEventListener('child-detached', this.childDetachHandler);
+  },
+
   onButtonDown: function () {
     this.active = true;
   },
@@ -184,23 +247,33 @@ AFRAME.registerComponent('teleport-controls', {
       hands[i].setAttribute('position', newPosition);
     }
 
-    this.el.emit('teleported', {
-      oldCamPosition: camPosition,
-      newCamPosition: newCamPosition,
+    this.el.emit('teleport', {
+      oldPosition: camPosition,
+      newPosition: newCamPosition,
       hitPoint: this.hitPoint
     });
   },
 
+  /**
+   * Check for raycaster intersection.
+   *
+   * @param {number} Line fragment point index.
+   * @param {number} Next line fragment point index.
+   * @returns {boolean} true if there's an intersection.
+   */
   checkMeshCollisions: function (i, next) {
+    var intersects;
+    var meshes;
+
     // Gather the meshes here to avoid having to wait for entities to iniitalize.
-    var meshes = this.data.collisionEntities.map(function (entity) {
+    meshes = this.collisionEntities.map(function (entity) {
       return entity.getObject3D('mesh');
     }).filter(function (n) { return n; });
     meshes = meshes.length ? meshes : [this.defaultPlane];
 
-    const intersects = this.raycaster.intersectObjects(meshes, true);
-
-    if (intersects.length > 0 && !this.hit && this.isValidNormalsAngle(intersects[0].face.normal)) {
+    intersects = this.raycaster.intersectObjects(meshes, true);
+    if (intersects.length > 0 && !this.hit &&
+        this.isValidNormalsAngle(intersects[0].face.normal)) {
       var point = intersects[0].point;
 
       this.line.material.color.set(this.curveHitColor);

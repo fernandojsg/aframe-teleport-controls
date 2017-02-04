@@ -4,13 +4,16 @@ require('../index.js');
 var entityFactory = require('./helpers').entityFactory;
 
 suite('teleport-controls component', function () {
+  var cameraEl;
   var component;
   var el;
+  var sceneEl;
 
   setup(function (done) {
     el = entityFactory();
-    el.addEventListener('componentinitialized', function (evt) {
-      if (evt.detail.name !== 'teleport-controls') { return; }
+    sceneEl = el.sceneEl;
+    sceneEl.addEventListener('camera-set-active', () => {
+      cameraEl = sceneEl.camera.el;
       component = el.components['teleport-controls'];
       done();
     });
@@ -105,16 +108,110 @@ suite('teleport-controls component', function () {
   });
 
   suite('onButtonDown', function () {
-    test('sets active for trackpad', function (done) {
+    test('sets active', function () {
       assert.notOk(component.active);
-      el.emit('trackpaddown');
-      setTimeout(() => {
-        assert.ok(component.active);
-        done();
-      });
+      component.onButtonDown();
+      assert.ok(component.active);
     });
   });
 
   suite('onButtonUp', function () {
+    setup(function () {
+      component.active = true;
+      component.hit = true;
+    });
+
+    test('unsets active', function () {
+      component.onButtonUp();
+    });
+
+    test('hides teleport ray and entity', function () {
+      var hitEntity = el.sceneEl.querySelector('.hitEntity');
+      var teleportEntity = el.sceneEl.querySelector('.teleportRay');
+      hitEntity.setAttribute('visible', true);
+      teleportEntity.setAttribute('visible', true);
+      component.onButtonUp();
+      assert.notOk(hitEntity.getAttribute('visible'));
+      assert.notOk(teleportEntity.getAttribute('visible'));
+    });
+
+    test('teleports camera', function () {
+      component.hitPoint = {x: 10, y: 20, z: 30};
+      component.onButtonUp();
+      assert.shallowDeepEqual(cameraEl.getAttribute('position'), {x: 10, y: 21.6, z: 30});
+    });
+
+    test('teleports tracked-controls', function (done) {
+      var hand = document.createElement('a-entity');
+      hand.setAttribute('tracked-controls', '');
+      sceneEl.appendChild(hand);
+      hand.addEventListener('loaded', () => {
+        component.hitPoint = {x: 10, y: 20, z: 30};
+        component.onButtonUp();
+        assert.shallowDeepEqual(hand.getAttribute('position'), {x: 10, y: 20, z: 30});
+        done();
+      });
+    });
+
+    test('emits event', function (done) {
+      el.addEventListener('teleport', evt => {
+        assert.shallowDeepEqual(evt.detail.oldPosition, {x: 0, y: 1.6, z: 0});
+        assert.shallowDeepEqual(evt.detail.newPosition, {x: 10, y: 21.6, z: 30});
+        assert.shallowDeepEqual(evt.detail.hitPoint, {x: 10, y: 20, z: 30});
+        done();
+      });
+      component.hitPoint = {x: 10, y: 20, z: 30};
+      component.onButtonUp();
+    });
+  });
+
+  suite('queryCollisionEntities', function () {
+    setup(function () {
+      var collisionEls = this.collisionEls = [];
+      for (var i = 0; i < 3; i++) {
+        collisionEls.push(document.createElement('a-entity'));
+        collisionEls[i].setAttribute('class', 'teleportable');
+        collisionEls[i].setAttribute(`data-teleport-${i}`, i);
+        sceneEl.appendChild(collisionEls[i]);
+      }
+    });
+
+    test('grabs all from class', function () {
+      assert.equal(component.collisionEntities.length, 0);
+      el.setAttribute('teleport-controls', 'collisionEntities', '.teleportable');
+      assert.equal(component.collisionEntities.length, 3);
+      assert.ok(component.collisionEntities.indexOf(this.collisionEls[0]) !== -1);
+      assert.ok(component.collisionEntities.indexOf(this.collisionEls[1]) !== -1);
+      assert.ok(component.collisionEntities.indexOf(this.collisionEls[2]) !== -1);
+    });
+
+    test('handles dynamically added entity to set', function (done) {
+      var newEl;
+      assert.equal(component.collisionEntities.length, 0);
+      el.setAttribute('teleport-controls', 'collisionEntities', '.teleportable');
+      assert.equal(component.collisionEntities.length, 3);
+
+      newEl = document.createElement('a-entity');
+      newEl.setAttribute('class', 'teleportable');
+
+      sceneEl.addEventListener('child-attached', () => {
+        assert.equal(component.collisionEntities.length, 4);
+        assert.ok(component.collisionEntities.indexOf(newEl) !== -1);
+        done();
+      });
+      sceneEl.appendChild(newEl);
+    });
+
+    test('handles dynamically removed entity from set', function (done) {
+      var newEl;
+      el.setAttribute('teleport-controls', 'collisionEntities', '.teleportable');
+      assert.equal(component.collisionEntities.length, 3);
+
+      sceneEl.addEventListener('child-detached', () => {
+        assert.equal(component.collisionEntities.length, 2);
+        done();
+      });
+      sceneEl.removeChild(component.collisionEntities[0]);
+    });
   });
 });
