@@ -12,14 +12,14 @@
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",
     "preghpages": "npm run build && shx rm -rf gh-pages && shx mkdir gh-pages && shx cp -r examples/* gh-pages",
-    "ghpages": "npm run preghpages && gh-pages -d gh-pages"
+    "ghpages": "npm run preghpages && gh-pages -d gh-pages",
+    "test": "karma start ./tests/karma.conf.js",
+    "test:firefox": "karma start ./tests/karma.conf.js --browsers Firefox",
+    "test:chrome": "karma start ./tests/karma.conf.js --browsers Chrome"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fernandojsg/aframe-teleport-controls.git"
-  },
-  "peerDependencies": {
-    "aframe": "^0.3.2"
   },
   "keywords": [
     "aframe",
@@ -36,10 +36,24 @@
   },
   "homepage": "https://github.com/fernandojsg/aframe-teleport-controls#readme",
   "devDependencies": {
-    "aframe": "aframevr/aframe#305fe5",
+    "aframe": "github:aframevr/aframe#e319e05",
+    "chai": "^3.4.1",
+    "chai-shallow-deep-equal": "^1.3.0",
     "cross-env": "^3.1.3",
     "gh-pages": "^0.11.0",
+    "karma": "^0.13.15",
+    "karma-browserify": "^4.4.2",
+    "karma-chai-shallow-deep-equal": "0.0.4",
+    "karma-chrome-launcher": "2.0.0",
+    "karma-env-preprocessor": "^0.1.1",
+    "karma-firefox-launcher": "^0.1.7",
+    "karma-mocha": "^0.2.1",
+    "karma-mocha-reporter": "^1.1.3",
+    "karma-sinon-chai": "^1.1.0",
+    "mocha": "^2.3.4",
     "semistandard": "^8.0.0",
+    "sinon": "^1.17.5",
+    "sinon-chai": "^2.8.0",
     "shx": "^0.1.1",
     "snazzy": "^4.0.0",
     "webpack": "^1.13.0",
