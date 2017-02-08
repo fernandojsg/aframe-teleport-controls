@@ -69,33 +69,17 @@ AFRAME.registerComponent('auto-hand-teleport-controls', {
     onNewHands: function (evt) {
         var hands = evt.detail && evt.detail.hands;
         if (hands) {
+            // We have a map with hand as key (e.g. "left", "right") and entity as value; enumerate.
             Object.keys(hands).forEach(function (key) {
+                // If the object/map really does contain the key,
                 if (hands.hasOwnProperty(key)) {
+		    // Set teleport-controls attributes for each entity.
                     hands[key].setAttribute('teleport-controls', 'collisionEntity', '#ground');
                     hands[key].setAttribute('teleport-controls', 'playerEntity', '#player');
                 }
             });
         }
     }
-});
-
-// FIXME: broken!
-
-AFRAME.registerGeometry('triangle', {
-  schema: {vertices: {default: ['-10 10 0', '-10 -10 0', '10 -10 0']}},
-
-  init: function (data) {
-    var geometry = new THREE.Geometry();
-    geometry.vertices.push.call(
-      geometry.vertices,
-      data.vertices.map(function (vertex) {
-        var points = vertex.split(' ').map(parseFloat);
-        return new THREE.Vector3(points[0], points[1], points[2]);
-      })
-    );
-    geometry.faces.push(new THREE.Face3(0, 1, 2));
-    this.geometry = geometry;
-  }
 });
 
 </script>
@@ -152,11 +136,6 @@ AFRAME.registerGeometry('triangle', {
                 geometry="primitive: box"
                 material="color: yellow">
       </a-entity>
-      <!-- hand controls
-      <a-entity teleport-controls hand-controls="left"></a-entity>
-      <a-entity teleport-controls="type: line" hand-controls="right"></a-entity>
-      </a-entity>
-      -->
     </a-scene>
   </body>
 </html>
