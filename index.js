@@ -240,6 +240,8 @@ AFRAME.registerComponent('teleport-controls', {
     // Find the hands and move them proportionally
     var hands = document.querySelectorAll('a-entity[tracked-controls]');
     for (var i = 0; i < hands.length; i++) {
+      if(hands[i].getAttribute('daydream-controls')) continue;
+      
       var position = hands[i].getAttribute('position');
       var pos = new THREE.Vector3().copy(position);
       var diff = camPosition.clone().sub(pos);
