@@ -7,7 +7,7 @@
   "main": "index.js",
   "scripts": {
     "build": "cross-env NODE_ENV=production webpack --config webpack.dev.js",
-    "start": "webpack-dev-server --config webpack.dev.js --progress --colors --hot -d --open --inline --content-base examples",
+    "start": "webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --progress --colors --hot -d --open --inline --content-base examples",
     "dist": "webpack index.js dist/aframe-teleport-controls.js && webpack -p index.js dist/aframe-teleport-controls.min.js",
     "lint": "semistandard -v | snazzy",
     "prepublish": "npm run dist",

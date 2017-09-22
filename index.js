@@ -132,7 +132,7 @@ AFRAME.registerComponent('teleport-controls', {
       var direction = shootAngle.set(0, 0, -1)
         .applyQuaternion(quaternion).normalize();
       this.line.setDirection(direction.clone());
-      p0.copy(this.obj.position);
+      p0.copy(this.obj.getWorldPosition());
 
       var last = p0.clone();
       var next;
@@ -234,8 +234,7 @@ AFRAME.registerComponent('teleport-controls', {
       var newCameraRigPositionY = cameraRigPosition.y + this.hitPoint.y - this.prevHeightDiff;
       var newCameraRigPosition = new THREE.Vector3(this.hitPoint.x, newCameraRigPositionY, this.hitPoint.z);
       this.prevHeightDiff = this.hitPoint.y;
-
-      this.data.cameraRig.setAttribute('position', newCamPosition);
+      this.data.cameraRig.setAttribute('position', newCameraRigPosition);
     } else {
       var cameraEl = this.el.sceneEl.camera.el;
       var camPosition = new THREE.Vector3().copy(cameraEl.getAttribute('position'));
