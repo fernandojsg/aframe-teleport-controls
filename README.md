@@ -22,6 +22,7 @@ Teleport component
 | curveNumberPoints | Number of points used in the curve | 30          |
 | curveLineWidth | Line width of the curve | 0.025          |
 | curveShootingSpeed | Curve shooting speed, as bigger value, farther distance. | 5          |
+| defaultPlaneSize | Default plane size | 100 |
 | maxLength | Max length of the ray when using type=line teleport | 10 |
 | landingNormal | Normal vector to detect collisions with the `collisionEntity` | (0, 1, 0)          |
 | landingMaxAngle | Angle threshold (in degrees) used together with `landingNormal` to detect if the mesh is so steep to jump to it. | 45          |

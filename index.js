@@ -38,6 +38,7 @@ AFRAME.registerComponent('teleport-controls', {
     curveHitColor: {type: 'color', default: '#99ff99'},
     curveMissColor: {type: 'color', default: '#ff0000'},
     curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
+    defaultPlaneSize: { default: 100 },
     landingNormal: {type: 'vec3', default: '0 1 0'},
     landingMaxAngle: {default: '45', min: 0, max: 360}
   },
@@ -372,7 +373,7 @@ function createDefaultPlane () {
   var material;
 
   // @hack: Because I can't get THREE.BufferPlane working on raycaster.
-  geometry = new THREE.BoxBufferGeometry(100, 0.5, 100);
+  geometry = new THREE.BoxBufferGeometry(this.data.defaultPlaneSize, 0.5, this.data.defaultPlaneSize);
   geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, -0.25, 0));
   material = new THREE.MeshBasicMaterial({color: 0xffff00});
   return new THREE.Mesh(geometry, material);
