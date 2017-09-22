@@ -74,6 +74,7 @@
 	    button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
 	    collisionEntities: {default: ''},
 	    hitEntity: {type: 'selector'},
+	    cameraRig: {type: 'selector'},
 	    hitCylinderColor: {type: 'color', default: '#99ff99'},
 	    hitCylinderRadius: {default: 0.25, min: 0},
 	    hitCylinderHeight: {default: 0.3, min: 0},
@@ -177,7 +178,7 @@
 	      var direction = shootAngle.set(0, 0, -1)
 	        .applyQuaternion(quaternion).normalize();
 	      this.line.setDirection(direction.clone());
-	      p0.copy(this.obj.position);
+	      p0.copy(this.obj.getWorldPosition());
 
 	      var last = p0.clone();
 	      var next;
@@ -274,23 +275,31 @@
 	    }
 
 	    // @todo Create this aux vectors outside
-	    var cameraEl = this.el.sceneEl.camera.el;
-	    var camPosition = new THREE.Vector3().copy(cameraEl.getAttribute('position'));
+	    if (this.data.cameraRig) {
+	      var cameraRigPosition = new THREE.Vector3().copy(this.data.cameraRig.getAttribute('position'));
+	      var newCameraRigPositionY = cameraRigPosition.y + this.hitPoint.y - this.prevHeightDiff;
+	      var newCameraRigPosition = new THREE.Vector3(this.hitPoint.x, newCameraRigPositionY, this.hitPoint.z);
+	      this.prevHeightDiff = this.hitPoint.y;
+	      this.data.cameraRig.setAttribute('position', newCameraRigPosition);
+	    } else {
+	      var cameraEl = this.el.sceneEl.camera.el;
+	      var camPosition = new THREE.Vector3().copy(cameraEl.getAttribute('position'));
 
-	    var newCamPositionY = camPosition.y + this.hitPoint.y - this.prevHeightDiff;
-	    var newCamPosition = new THREE.Vector3(this.hitPoint.x, newCamPositionY, this.hitPoint.z);
-	    this.prevHeightDiff = this.hitPoint.y;
+	      var newCamPositionY = camPosition.y + this.hitPoint.y - this.prevHeightDiff;
+	      var newCamPosition = new THREE.Vector3(this.hitPoint.x, newCamPositionY, this.hitPoint.z);
+	      this.prevHeightDiff = this.hitPoint.y;
 
-	    cameraEl.setAttribute('position', newCamPosition);
+	      cameraEl.setAttribute('position', newCamPosition);
 
-	    // Find the hands and move them proportionally
-	    var hands = document.querySelectorAll('a-entity[tracked-controls]');
-	    for (var i = 0; i < hands.length; i++) {
-	      var position = hands[i].getAttribute('position');
-	      var pos = new THREE.Vector3().copy(position);
-	      var diff = camPosition.clone().sub(pos);
-	      var newPosition = newCamPosition.clone().sub(diff);
-	      hands[i].setAttribute('position', newPosition);
+	      // Find the hands and move them proportionally
+	      var hands = document.querySelectorAll('a-entity[tracked-controls]');
+	      for (var i = 0; i < hands.length; i++) {
+	        var position = hands[i].getAttribute('position');
+	        var pos = new THREE.Vector3().copy(position);
+	        var diff = camPosition.clone().sub(pos);
+	        var newPosition = newCamPosition.clone().sub(diff);
+	        hands[i].setAttribute('position', newPosition);
+	      }
 	    }
 
 	    this.el.emit('teleport', {
