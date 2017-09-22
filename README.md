@@ -8,6 +8,7 @@ Teleport component
 
 | Property    | Description                     | Default Value    |
 | --------    | -----------                     | -------------    |
+| cameraRig       | Selector of the camera Rig to teleport         |    |
 | type       | Type of teleport: line or parabolic         | parabolic   |
 | button       | Button used to launch the teleport         | trackpad   |
 | collisionEntities | Selector of the meshes used to check the collisions. If no value provided a plane Y=0 is used |  |
@@ -21,6 +22,7 @@ Teleport component
 | curveNumberPoints | Number of points used in the curve | 30          |
 | curveLineWidth | Line width of the curve | 0.025          |
 | curveShootingSpeed | Curve shooting speed, as bigger value, farther distance. | 5          |
+| defaultPlaneSize | Default plane size | 100 |
 | maxLength | Max length of the ray when using type=line teleport | 10 |
 | landingNormal | Normal vector to detect collisions with the `collisionEntity` | (0, 1, 0)          |
 | landingMaxAngle | Angle threshold (in degrees) used together with `landingNormal` to detect if the mesh is so steep to jump to it. | 45          |
@@ -31,6 +33,8 @@ Teleport component
 
 Install and use by directly including the [browser files](dist):
 
+There are two ways to use it: using a camera rig or not. I strongly recommend using a camera rig as the following example:
+
 ```html
 <head>
   <title>My A-Frame Scene</title>
@@ -40,7 +44,13 @@ Install and use by directly including the [browser files](dist):
 
 <body>
   <a-scene>
-    <a-entity teleport-controls vive-controls="hand: left"></a-entity>
+    <a-entity id="cameraRig">
+      <!-- camera -->
+      <a-entity camera wasd-controls look-controls></a-entity>
+      <!-- hand controls -->
+      <a-entity id="left-hand" teleport-controls="cameraRig: #cameraRig"></a-entity>
+      <a-entity id="right-hand" teleport-controls="cameraRig: #cameraRig"></a-entity>
+    </a-entity>
   </a-scene>
 </body>
 ```

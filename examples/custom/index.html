@@ -28,25 +28,30 @@
             material="color: #ff9999;">
       </a-entity>
 
-      <!-- hand controls -->
-      <a-entity id="left-hand"
-                teleport-controls="collisionEntities: #floorLeft;
-                curveHitColor: #ff9999;
-                curveMissColor: #ff0000;
-                maxLength: 30;
-                type: line;
-                hitEntity: #hintEntity;"
-                vive-controls="hand: left">
-      </a-entity>
-      <a-entity id="right-hand"
-                teleport-controls="collisionEntities: #floorRight;
-                button: trigger;
-                curveHitColor: #9999ff;
-                curveMissColor: #ff0000;
-                curveNumberPoints: 50;
-                curveLineWidth: 0.015;
-                curveShootingSpeed: 4"
-            vive-controls="hand: right">
+      <a-entity id="cameraRig">
+        <a-entity camera wasd-controls look-controls></a-entity>
+        <!-- hand controls -->
+        <a-entity id="left-hand"
+                  teleport-controls="collisionEntities: #floorLeft;
+                  curveHitColor: #ff9999;
+                  curveMissColor: #ff0000;
+                  cameraRig: #cameraRig;
+                  maxLength: 30;
+                  type: line;
+                  hitEntity: #hintEntity;"
+                  vive-controls="hand: left">
+        </a-entity>
+        <a-entity id="right-hand"
+                  teleport-controls="collisionEntities: #floorRight;
+                  button: trigger;
+                  cameraRig: #cameraRig;
+                  curveHitColor: #9999ff;
+                  curveMissColor: #ff0000;
+                  curveNumberPoints: 50;
+                  curveLineWidth: 0.015;
+                  curveShootingSpeed: 4"
+              vive-controls="hand: right">
+        </a-entity>
       </a-entity>
     </a-scene>
   </body>

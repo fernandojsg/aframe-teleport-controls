@@ -38,15 +38,17 @@
       material="src: url(asphalt.jpg); repeat: 10 10; roughness: 0.8" obj-model="obj: url(floor.obj)">
       </a-entity>
 
-      <!-- hand controls -->
-      <a-entity id="left-hand"
-                teleport-controls="collisionEntities: #floorgeometry"
-                vive-controls="hand: left">
-      </a-entity>
-      <a-entity id="right-hand"
-                teleport-controls="collisionEntities: #floorgeometry"
-                vive-controls="hand: right">
-      </a-entity>
+      <a-entity id="cameraRig">
+        <a-entity camera wasd-controls look-controls></a-entity>
+        <!-- hand controls -->
+        <a-entity id="left-hand"
+                  teleport-controls="collisionEntities: #floorgeometry; cameraRig: #cameraRig"
+                  vive-controls="hand: left">
+        </a-entity>
+        <a-entity id="right-hand"
+                  teleport-controls="collisionEntities: #floorgeometry; cameraRig: #cameraRig"
+                  vive-controls="hand: right">
+        </a-entity>
       </a-entity>
     </a-scene>
   </body>

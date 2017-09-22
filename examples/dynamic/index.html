@@ -66,10 +66,13 @@
 
       <!-- Hand controls. -->
       <a-mixin id="teleport"
-        teleport-controls="type: parabolic; collisionEntities: [mixin='box'],[mixin='sphere']"
+        teleport-controls="type: parabolic; cameraRig: #cameraRig; collisionEntities: [mixin='box'],[mixin='sphere']"
       ></a-mixin>
-      <a-entity id="leftHand" mixin="teleport" vive-controls="hand: left"></a-entity>
-      <a-entity id="rightHand" mixin="teleport" vive-controls="hand: right"></a-entity>
+      <a-entity id="cameraRig">
+        <a-entity camera wasd-controls look-controls></a-entity>
+        <a-entity id="leftHand" mixin="teleport" vive-controls="hand: left"></a-entity>
+        <a-entity id="rightHand" mixin="teleport" vive-controls="hand: right"></a-entity>
+      </a-entity>
     </a-scene>
   </body>
 </html>
