@@ -104,7 +104,7 @@
 	    this.curveHitColor = new THREE.Color();
 	    this.raycaster = new THREE.Raycaster();
 
-	    this.defaultPlane = createDefaultPlane();
+	    this.defaultPlane = createDefaultPlane(this.data.defaultPlaneSize);
 
 	    teleportEntity = this.teleportEntity = document.createElement('a-entity');
 	    teleportEntity.classList.add('teleportRay');
@@ -414,12 +414,12 @@
 	  return hitEntity;
 	}
 
-	function createDefaultPlane () {
+	function createDefaultPlane (size) {
 	  var geometry;
 	  var material;
 
 	  // @hack: Because I can't get THREE.BufferPlane working on raycaster.
-	  geometry = new THREE.BoxBufferGeometry(this.data.defaultPlaneSize, 0.5, this.data.defaultPlaneSize);
+	  geometry = new THREE.BoxBufferGeometry(size, 0.5, size);
 	  geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, -0.25, 0));
 	  material = new THREE.MeshBasicMaterial({color: 0xffff00});
 	  return new THREE.Mesh(geometry, material);
