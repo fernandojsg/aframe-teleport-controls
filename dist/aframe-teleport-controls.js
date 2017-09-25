@@ -127,14 +127,10 @@
 	  },
 
 	  updateAutoValues: function(self, oldData) {
-	    if (!self.controllerName) {
-	      return;
-	    }
-
 	    var oldButton = !!oldData ? oldData.button : self.button;
 	    var oldAxis = !!oldData ? oldData.axis : self.axis;
 	    if (self.button === 'auto') {
-	      if (self.controllerName === 'windows-motion-controls') {
+	      if (!!self.controllerName && self.controllerName === 'windows-motion-controls') {
 	        self.button = 'thumbstick';
 	      }
 	      else {
@@ -143,7 +139,7 @@
 	    }
 
 	    if (self.axis === 'auto') {
-	      if (self.controllerName === 'windows-motion-controls') {
+	      if (!!self.controllerName && self.controllerName === 'windows-motion-controls') {
 	        self.axis = 'up';
 	      }
 	      else {
