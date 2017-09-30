@@ -10,7 +10,7 @@ Teleport component
 | --------    | -----------                     | -------------    |
 | cameraRig       | Selector of the camera Rig to teleport         |    |
 | type       | Type of teleport: line or parabolic         | parabolic   |
-| button       | Button used to launch the teleport         | trackpad   |
+| button       | Button used to launch the teleport: trackpad, trigger, grip, menu         | trackpad   |
 | collisionEntities | Selector of the meshes used to check the collisions. If no value provided a plane Y=0 is used |  |
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
