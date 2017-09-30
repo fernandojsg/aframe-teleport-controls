@@ -16,7 +16,6 @@ Teleport component
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
 | hitCylinderRadius | Radius used for the default `hitEntity` primitives | 0.25          |
 | hitCylinderHeight | Height used for the default `hitEntity` primitives | 0.3 |
-| maxLength | Max. length for line teleport | 10 |
 | curveHitColor | Color used for the curve when hit the mesh | #99ff99          |
 | curveMissColor | Color used for the curve when it doesn't hit anything | #ff0000          |
 | curveNumberPoints | Number of points used in the curve | 30          |
