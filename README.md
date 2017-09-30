@@ -54,6 +54,25 @@ There are two ways to use it: using a camera rig or not. I strongly recommend us
 </body>
 ```
 
+To use this component with Gear VR, you need to add `gearvr-controls`:
+
+```html
+  <a-scene>
+    <a-entity id="cameraRig">
+      <a-camera />
+      <a-entity
+        teleport-controls="cameraRig: #cameraRig"
+        gearvr-controls
+       />
+    </a-entity>
+  </a-scene>
+```
+
+You can also use the trigger button instead of trackpad button by adding `button: trigger`.
+
+For Daydream, replace `gearvr-controls` by `daydream-controls`.
+
+
 #### NPM Installation
 
 Install via NPM:
