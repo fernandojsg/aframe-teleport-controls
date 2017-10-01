@@ -72,6 +72,11 @@ You can also use the trigger button instead of trackpad button by adding `button
 
 For Daydream, replace `gearvr-controls` by `daydream-controls`.
 
+If you use [aframe-environment-component](https://github.com/feiss/aframe-environment-component) > 1.0.0
+and want to teleport on the generated ground, on the hills, you can
+specify `collisionEntities: .environmentGround`. You can also add `.environmentDressing` if you want to teleport on the dressing like the mushrooms.
+On Gear VR, it can be very slow with the curved line. Use `maxLength: 200; type: line;` in this case.
+
 
 #### NPM Installation
 
