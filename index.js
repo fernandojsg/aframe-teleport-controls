@@ -25,7 +25,8 @@ if (!Element.prototype.matches) {
 AFRAME.registerComponent('teleport-controls', {
   schema: {
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
-    button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
+    axis: {default: 'auto', oneOf: ['left', 'right', 'up', 'down', 'auto', 'none']},
+    button: {default: 'auto', oneOf: ['trackpad', 'trigger', 'grip', 'menu', 'thumbstick', 'auto']},
     collisionEntities: {default: ''},
     hitEntity: {type: 'selector'},
     cameraRig: {type: 'selector'},
@@ -44,11 +45,12 @@ AFRAME.registerComponent('teleport-controls', {
   },
 
   init: function () {
-    var data = this.data;
     var el = this.el;
     var teleportEntity;
+    var self = this;
 
     this.active = false;
+    this.axisIndex = 1;
     this.obj = el.object3D;
     this.hitPoint = new THREE.Vector3();
     this.hit = false;
@@ -57,6 +59,7 @@ AFRAME.registerComponent('teleport-controls', {
     this.curveMissColor = new THREE.Color();
     this.curveHitColor = new THREE.Color();
     this.raycaster = new THREE.Raycaster();
+    this.controllerName = undefined;
 
     this.defaultPlane = createDefaultPlane(this.data.defaultPlaneSize);
 
@@ -65,15 +68,123 @@ AFRAME.registerComponent('teleport-controls', {
     teleportEntity.setAttribute('visible', false);
     el.sceneEl.appendChild(this.teleportEntity);
 
-    el.addEventListener(data.button + 'down', this.onButtonDown.bind(this));
-    el.addEventListener(data.button + 'up', this.onButtonUp.bind(this));
+    this.buttonDownHandler = this.onButtonDown.bind(this);
+    this.buttonUpHandler = this.onButtonUp.bind(this);
+    this.axisMoveHandler = this.onAxisMoved.bind(this);
+
+    el.addEventListener('controllerconnected', function(evt) {
+      self.controllerName = evt.detail.name;
+      self.updateAutoValues(self);
+    });
 
     this.queryCollisionEntities();
+  },
+
+  updateAutoValues: function(self, oldData) {
+    var oldButton = !!oldData ? oldData.button : self.button;
+    var oldAxis = !!oldData ? oldData.axis : self.axis;
+    if (self.button === 'auto') {
+      if (!!self.controllerName && self.controllerName === 'windows-motion-controls') {
+        self.button = 'thumbstick';
+      }
+      else {
+        self.button = 'trackpad';
+      }
+    }
+
+    if (self.axis === 'auto') {
+      if (!!self.controllerName && self.controllerName === 'windows-motion-controls') {
+        self.axis = 'up';
+      }
+      else {
+        self.axis = 'none';
+      }
+    }
+
+    if (self.axis !== 'none' && self.button !== 'trackpad' && self.button !== 'thumbstick') {
+      self.axis = 'none';
+    }
+
+    self.updateButtonHandlers(self, oldButton, self.button);
+    self.updateAxisHandler(self, oldAxis, self.axis);
+    self.updateAxisIndex(self);
+  },
+
+  updateAxisHandler: function(self, oldAxis, currentAxis) {
+    if (oldAxis !== currentAxis) {
+      if (currentAxis === 'none') {
+        self.el.removeEventListener('axismove', self.axisMoveHandler);
+      }
+      else {
+        self.el.addEventListener('axismove', self.axisMoveHandler);
+      }
+    }
+  },
+
+  updateButtonHandlers: function(self, oldButton, currentButton) {
+    if (oldButton != currentButton) {
+      self.el.removeEventListener(oldButton + 'down', self.buttonDownHandler);
+      self.el.removeEventListener(oldButton + 'up', self.buttonUpHandler);
+      self.el.addEventListener(currentButton + 'down', self.buttonDownHandler);
+      self.el.addEventListener(currentButton + 'up', self.buttonUpHandler);
+    }
+  },
+
+  updateAxisIndex: function (self) {
+    if (self.axis !== 'none') {
+      // The threshold beyond which a change in axis is detected for teleportation
+      var axisDeadzoneThreshold = 0.4;
+      self.axisDeadzone = axisDeadzoneThreshold;
+
+      // -1 is the leftmost range for all thumbsticks and trackpads
+      if (self.axis === 'left') {
+          self.axisDeadzone = -axisDeadzoneThreshold;
+      }
+
+      var windowsMotionAxisMap = {'thumbstick': {'left': 0, 'right': 0, 'up': 1, 'down': 1}, 'trackpad': {'left': 2, 'right': 2, 'up': 3, 'down': 3}};
+      var viveAxisMap = {'trackpad': {'left': 0, 'right': 0, 'up': 1, 'down': 1}};
+      var oculusAxisMap = {'thumbstick': {'left': 0, 'right': 0, 'up': 1, 'down': 1}};
+
+      if (self.controllerName === 'windows-motion-controls') {
+        if (self.axis === 'up') {
+          self.axisDeadzone = -axisDeadzoneThreshold;
+        }
+        foundButton = windowsMotionAxisMap[self.button];
+      }
+      else if(self.controllerName === 'vive-controls') {
+        if (self.axis === 'down') {
+          self.axisDeadzone = -axisDeadzoneThreshold;
+        }
+        foundButton = viveAxisMap[self.button];
+      }
+      else if(self.controllerName === 'oculus-touch-controls') {
+        if (self.axis === 'up') {
+          self.axisDeadzone = -axisDeadzoneThreshold;
+        }
+        foundButton = oculusAxisMap[self.button];
+      }
+
+      // Assign the axis index if button is found
+      if (!!foundButton) {
+        self.axisIndex = foundButton[self.axis];
+      }
+
+      if (!foundButton || !self.axis){
+        console.log("Error finding " + self.button + " or " + self.axis + " in " + self.controllerName);
+      }
+    }
   },
 
   update: function (oldData) {
     var data = this.data;
     var diff = AFRAME.utils.diff(data, oldData);
+
+    // Update which button press (or button + axis) is used to teleport
+    if (!this.axis || !this.button || 'axis' in diff || 'button' in diff) {
+      this.axis = data.axis;
+      this.button = data.button;
+      this.updateAutoValues(this, oldData);
+    }
 
     // Update normal.
     this.referenceNormal.copy(data.landingNormal);
@@ -207,16 +318,7 @@ AFRAME.registerComponent('teleport-controls', {
     el.sceneEl.addEventListener('child-detached', this.childDetachHandler);
   },
 
-  onButtonDown: function () {
-    this.active = true;
-  },
-
-  /**
-   * Jump!
-   */
-  onButtonUp: function (evt) {
-    if (!this.active) { return; }
-
+   onTeleport: function() {
     // Jump!
 
     // Hide the hit point and the curve
@@ -262,6 +364,43 @@ AFRAME.registerComponent('teleport-controls', {
       newPosition: newCamPosition,
       hitPoint: this.hitPoint
     });
+  },
+
+  onAxisMoved: function (evt) {
+    if (this.axis === 'none') {
+      return;
+    }
+
+    var axisValue = evt.detail.axis[this.axisIndex];
+    var isSameSign = (axisValue * this.axisDeadzone) > 0;
+    var isThresholdPassed = Math.abs(axisValue) >= Math.abs(this.axisDeadzone) && isSameSign;
+    if (!this.active && isThresholdPassed) {
+      this.active = true;
+    }
+    else if (this.active && !isThresholdPassed) {
+      this.active = false;
+      this.onTeleport();
+    }
+  },
+
+  onButtonDown: function () {
+    // If an axis is specified, then this means that teleport
+    // is triggered on axis move, rather than button press
+    if (this.axis !== 'none') {
+      return;
+    }
+
+    this.active = true;
+  },
+
+  /**
+   * Jump!
+   */
+  onButtonUp: function (evt) {
+    if (this.active) {
+      this.active = false;
+      this.onTeleport();
+    }
   },
 
   /**

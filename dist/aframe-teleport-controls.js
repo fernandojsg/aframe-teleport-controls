@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	/* global THREE, AFRAME  */
 	var cylinderTexture = __webpack_require__(1);
@@ -71,7 +71,8 @@
 	AFRAME.registerComponent('teleport-controls', {
 	  schema: {
 	    type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
-	    button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
+	    axis: {default: 'auto', oneOf: ['left', 'right', 'up', 'down', 'auto', 'none']},
+	    button: {default: 'auto', oneOf: ['trackpad', 'trigger', 'grip', 'menu', 'thumbstick', 'auto']},
 	    collisionEntities: {default: ''},
 	    hitEntity: {type: 'selector'},
 	    cameraRig: {type: 'selector'},
@@ -90,11 +91,12 @@
 	  },
 
 	  init: function () {
-	    var data = this.data;
 	    var el = this.el;
 	    var teleportEntity;
+	    var self = this;
 
 	    this.active = false;
+	    this.axisIndex = 1;
 	    this.obj = el.object3D;
 	    this.hitPoint = new THREE.Vector3();
 	    this.hit = false;
@@ -103,6 +105,7 @@
 	    this.curveMissColor = new THREE.Color();
 	    this.curveHitColor = new THREE.Color();
 	    this.raycaster = new THREE.Raycaster();
+	    this.controllerName = undefined;
 
 	    this.defaultPlane = createDefaultPlane(this.data.defaultPlaneSize);
 
@@ -111,15 +114,123 @@
 	    teleportEntity.setAttribute('visible', false);
 	    el.sceneEl.appendChild(this.teleportEntity);
 
-	    el.addEventListener(data.button + 'down', this.onButtonDown.bind(this));
-	    el.addEventListener(data.button + 'up', this.onButtonUp.bind(this));
+	    this.buttonDownHandler = this.onButtonDown.bind(this);
+	    this.buttonUpHandler = this.onButtonUp.bind(this);
+	    this.axisMoveHandler = this.onAxisMoved.bind(this);
+
+	    el.addEventListener('controllerconnected', function(evt) {
+	      self.controllerName = evt.detail.name;
+	      self.updateAutoValues(self);
+	    });
 
 	    this.queryCollisionEntities();
+	  },
+
+	  updateAutoValues: function(self, oldData) {
+	    var oldButton = !!oldData ? oldData.button : self.button;
+	    var oldAxis = !!oldData ? oldData.axis : self.axis;
+	    if (self.button === 'auto') {
+	      if (!!self.controllerName && self.controllerName === 'windows-motion-controls') {
+	        self.button = 'thumbstick';
+	      }
+	      else {
+	        self.button = 'trackpad';
+	      }
+	    }
+
+	    if (self.axis === 'auto') {
+	      if (!!self.controllerName && self.controllerName === 'windows-motion-controls') {
+	        self.axis = 'up';
+	      }
+	      else {
+	        self.axis = 'none';
+	      }
+	    }
+
+	    if (self.axis !== 'none' && self.button !== 'trackpad' && self.button !== 'thumbstick') {
+	      self.axis = 'none';
+	    }
+
+	    self.updateButtonHandlers(self, oldButton, self.button);
+	    self.updateAxisHandler(self, oldAxis, self.axis);
+	    self.updateAxisIndex(self);
+	  },
+
+	  updateAxisHandler: function(self, oldAxis, currentAxis) {
+	    if (oldAxis !== currentAxis) {
+	      if (currentAxis === 'none') {
+	        self.el.removeEventListener('axismove', self.axisMoveHandler);
+	      }
+	      else {
+	        self.el.addEventListener('axismove', self.axisMoveHandler);
+	      }
+	    }
+	  },
+
+	  updateButtonHandlers: function(self, oldButton, currentButton) {
+	    if (oldButton != currentButton) {
+	      self.el.removeEventListener(oldButton + 'down', self.buttonDownHandler);
+	      self.el.removeEventListener(oldButton + 'up', self.buttonUpHandler);
+	      self.el.addEventListener(currentButton + 'down', self.buttonDownHandler);
+	      self.el.addEventListener(currentButton + 'up', self.buttonUpHandler);
+	    }
+	  },
+
+	  updateAxisIndex: function (self) {
+	    if (self.axis !== 'none') {
+	      // The threshold beyond which a change in axis is detected for teleportation
+	      var axisDeadzoneThreshold = 0.4;
+	      self.axisDeadzone = axisDeadzoneThreshold;
+
+	      // -1 is the leftmost range for all thumbsticks and trackpads
+	      if (self.axis === 'left') {
+	          self.axisDeadzone = -axisDeadzoneThreshold;
+	      }
+
+	      var windowsMotionAxisMap = {'thumbstick': {'left': 0, 'right': 0, 'up': 1, 'down': 1}, 'trackpad': {'left': 2, 'right': 2, 'up': 3, 'down': 3}};
+	      var viveAxisMap = {'trackpad': {'left': 0, 'right': 0, 'up': 1, 'down': 1}};
+	      var oculusAxisMap = {'thumbstick': {'left': 0, 'right': 0, 'up': 1, 'down': 1}};
+
+	      if (self.controllerName === 'windows-motion-controls') {
+	        if (self.axis === 'up') {
+	          self.axisDeadzone = -axisDeadzoneThreshold;
+	        }
+	        foundButton = windowsMotionAxisMap[self.button];
+	      }
+	      else if(self.controllerName === 'vive-controls') {
+	        if (self.axis === 'down') {
+	          self.axisDeadzone = -axisDeadzoneThreshold;
+	        }
+	        foundButton = viveAxisMap[self.button];
+	      }
+	      else if(self.controllerName === 'oculus-touch-controls') {
+	        if (self.axis === 'up') {
+	          self.axisDeadzone = -axisDeadzoneThreshold;
+	        }
+	        foundButton = oculusAxisMap[self.button];
+	      }
+
+	      // Assign the axis index if button is found
+	      if (!!foundButton) {
+	        self.axisIndex = foundButton[self.axis];
+	      }
+
+	      if (!foundButton || !self.axis){
+	        console.log("Error finding " + self.button + " or " + self.axis + " in " + self.controllerName);
+	      }
+	    }
 	  },
 
 	  update: function (oldData) {
 	    var data = this.data;
 	    var diff = AFRAME.utils.diff(data, oldData);
+
+	    // Update which button press (or button + axis) is used to teleport
+	    if (!this.axis || !this.button || 'axis' in diff || 'button' in diff) {
+	      this.axis = data.axis;
+	      this.button = data.button;
+	      this.updateAutoValues(this, oldData);
+	    }
 
 	    // Update normal.
 	    this.referenceNormal.copy(data.landingNormal);
@@ -253,16 +364,7 @@
 	    el.sceneEl.addEventListener('child-detached', this.childDetachHandler);
 	  },
 
-	  onButtonDown: function () {
-	    this.active = true;
-	  },
-
-	  /**
-	   * Jump!
-	   */
-	  onButtonUp: function (evt) {
-	    if (!this.active) { return; }
-
+	   onTeleport: function() {
 	    // Jump!
 
 	    // Hide the hit point and the curve
@@ -308,6 +410,43 @@
 	      newPosition: newCamPosition,
 	      hitPoint: this.hitPoint
 	    });
+	  },
+
+	  onAxisMoved: function (evt) {
+	    if (this.axis === 'none') {
+	      return;
+	    }
+
+	    var axisValue = evt.detail.axis[this.axisIndex];
+	    var isSameSign = (axisValue * this.axisDeadzone) > 0;
+	    var isThresholdPassed = Math.abs(axisValue) >= Math.abs(this.axisDeadzone) && isSameSign;
+	    if (!this.active && isThresholdPassed) {
+	      this.active = true;
+	    }
+	    else if (this.active && !isThresholdPassed) {
+	      this.active = false;
+	      this.onTeleport();
+	    }
+	  },
+
+	  onButtonDown: function () {
+	    // If an axis is specified, then this means that teleport
+	    // is triggered on axis move, rather than button press
+	    if (this.axis !== 'none') {
+	      return;
+	    }
+
+	    this.active = true;
+	  },
+
+	  /**
+	   * Jump!
+	   */
+	  onButtonUp: function (evt) {
+	    if (this.active) {
+	      this.active = false;
+	      this.onTeleport();
+	    }
 	  },
 
 	  /**
@@ -426,16 +565,16 @@
 	}
 
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	module.exports = 'url(data:image/png;base64,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)';
 
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/* global THREE */
 	// Parabolic motion equation, y = p0 + v0*t + 1/2at^2
@@ -455,9 +594,9 @@
 	module.exports = parabolicCurve;
 
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	/* global THREE */
 	var RayCurve = function (numPoints, width) {
@@ -522,5 +661,5 @@
 	module.exports = RayCurve;
 
 
-/***/ }
+/***/ })
 /******/ ]);
