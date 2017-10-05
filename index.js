@@ -372,9 +372,8 @@ function createDefaultPlane (size) {
   var geometry;
   var material;
 
-  // @hack: Because I can't get THREE.BufferPlane working on raycaster.
-  geometry = new THREE.BoxBufferGeometry(size, 0.5, size);
-  geometry.applyMatrix(new THREE.Matrix4().makeTranslation(0, -0.25, 0));
+  geometry = new THREE.PlaneBufferGeometry(100, 100);
+  geometry.rotateX(- Math.PI / 2)
   material = new THREE.MeshBasicMaterial({color: 0xffff00});
   return new THREE.Mesh(geometry, material);
 }
