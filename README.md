@@ -10,13 +10,12 @@ Teleport component
 | --------    | -----------                     | -------------    |
 | cameraRig       | Selector of the camera Rig to teleport         |    |
 | type       | Type of teleport: line or parabolic         | parabolic   |
-| button       | Button used to launch the teleport         | trackpad   |
+| button       | Button used to launch the teleport: trackpad, trigger, grip, menu         | trackpad   |
 | collisionEntities | Selector of the meshes used to check the collisions. If no value provided a plane Y=0 is used |  |
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
 | hitCylinderRadius | Radius used for the default `hitEntity` primitives | 0.25          |
 | hitCylinderHeight | Height used for the default `hitEntity` primitives | 0.3 |
-| maxLength | Max. length for line teleport | 10 |
 | curveHitColor | Color used for the curve when hit the mesh | #99ff99          |
 | curveMissColor | Color used for the curve when it doesn't hit anything | #ff0000          |
 | curveNumberPoints | Number of points used in the curve | 30          |
@@ -38,7 +37,7 @@ There are two ways to use it: using a camera rig or not. I strongly recommend us
 ```html
 <head>
   <title>My A-Frame Scene</title>
-  <script src="https://aframe.io/releases/0.4.0/aframe.min.js"></script>
+  <script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
   <script src="https://rawgit.com/fernandojsg/aframe-teleport-controls/master/dist/aframe-teleport-controls.min.js"></script>
 </head>
 
@@ -54,6 +53,30 @@ There are two ways to use it: using a camera rig or not. I strongly recommend us
   </a-scene>
 </body>
 ```
+
+To use this component with Gear VR, you need to add `gearvr-controls`:
+
+```html
+  <a-scene>
+    <a-entity id="cameraRig">
+      <a-camera />
+      <a-entity
+        teleport-controls="cameraRig: #cameraRig"
+        gearvr-controls
+       />
+    </a-entity>
+  </a-scene>
+```
+
+You can also use the trigger button instead of trackpad button by adding `button: trigger`.
+
+For Daydream, replace `gearvr-controls` by `daydream-controls`.
+
+If you use [aframe-environment-component](https://github.com/feiss/aframe-environment-component) > 1.0.0
+and want to teleport on the generated ground, on the hills, you can
+specify `collisionEntities: .environmentGround`. You can also add `.environmentDressing` if you want to teleport on the dressing like the mushrooms.
+On Gear VR, it can be very slow with the curved line. Use `maxLength: 200; type: line;` in this case.
+
 
 #### NPM Installation
 
