@@ -46,10 +46,10 @@ There are two ways to use it: using a camera rig or not. I strongly recommend us
   <a-scene>
     <a-entity id="cameraRig">
       <!-- camera -->
-      <a-entity camera wasd-controls look-controls></a-entity>
+      <a-entity id="head" camera wasd-controls look-controls></a-entity>
       <!-- hand controls -->
-      <a-entity id="left-hand" teleport-controls="cameraRig: #cameraRig"></a-entity>
-      <a-entity id="right-hand" teleport-controls="cameraRig: #cameraRig"></a-entity>
+      <a-entity id="left-hand" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head;"></a-entity>
+      <a-entity id="right-hand" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head;"></a-entity>
     </a-entity>
   </a-scene>
 </body>
