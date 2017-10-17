@@ -217,8 +217,9 @@ AFRAME.registerComponent('teleport-controls', {
    */
   onButtonUp: (function() {
     const rigWorldPosition = new THREE.Vector3();
-    const newRigWorldPosition = new THREE.Vector3();
     const teleportOriginWorldPosition = new THREE.Vector3();
+    const newRigWorldPosition = new THREE.Vector3();
+    const newRigLocalPosition = new THREE.Vector3();
 
   return function (evt) {
     if (!this.active) { return; }
@@ -244,11 +245,16 @@ AFRAME.registerComponent('teleport-controls', {
       newRigWorldPosition.sub(teleportOriginWorldPosition).add(rigWorldPosition);
     }
 
-    // always keep the rig at the same offset off the ground after teleporting
+    // Always keep the rig at the same offset off the ground after teleporting
     newRigWorldPosition.y = rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
     this.prevHitHeight = this.hitPoint.y;
 
-    rig.setAttribute('position', newRigWorldPosition);
+    // Finally update the rigs position
+    newRigLocalPosition.copy(newRigWorldPosition);
+    if(rig.object3D.parent) {
+      rig.object3D.parent.worldToLocal(newRigLocalPosition);
+    }
+    rig.setAttribute('position', newRigLocalPosition);
 
     // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
     if (!this.data.cameraRig) { 
