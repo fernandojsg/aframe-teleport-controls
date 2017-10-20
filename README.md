@@ -9,6 +9,7 @@ Teleport component
 | Property    | Description                     | Default Value    |
 | --------    | -----------                     | -------------    |
 | cameraRig       | Selector of the camera Rig to teleport         |    |
+| teleportOrigin | Selector of the child of cameraRig to use as the center point for teleporting, typeically the camera. If set teleporting will position the cameraRig such that this element ends up above the teleport location (rather than the center of the camreaRig) |    |
 | type       | Type of teleport: line or parabolic         | parabolic   |
 | button       | Button used to launch the teleport: trackpad, trigger, grip, menu         | trackpad   |
 | collisionEntities | Selector of the meshes used to check the collisions. If no value provided a plane Y=0 is used |  |
@@ -45,10 +46,10 @@ There are two ways to use it: using a camera rig or not. I strongly recommend us
   <a-scene>
     <a-entity id="cameraRig">
       <!-- camera -->
-      <a-entity camera wasd-controls look-controls></a-entity>
+      <a-entity id="head" camera wasd-controls look-controls></a-entity>
       <!-- hand controls -->
-      <a-entity id="left-hand" teleport-controls="cameraRig: #cameraRig"></a-entity>
-      <a-entity id="right-hand" teleport-controls="cameraRig: #cameraRig"></a-entity>
+      <a-entity id="left-hand" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head;"></a-entity>
+      <a-entity id="right-hand" teleport-controls="cameraRig: #cameraRig; teleportOrigin: #head;"></a-entity>
     </a-entity>
   </a-scene>
 </body>

@@ -29,6 +29,7 @@ AFRAME.registerComponent('teleport-controls', {
     collisionEntities: {default: ''},
     hitEntity: {type: 'selector'},
     cameraRig: {type: 'selector'},
+    teleportOrigin: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25, min: 0},
     hitCylinderHeight: {default: 0.3, min: 0},
@@ -52,7 +53,7 @@ AFRAME.registerComponent('teleport-controls', {
     this.obj = el.object3D;
     this.hitPoint = new THREE.Vector3();
     this.hit = false;
-    this.prevHeightDiff = 0;
+    this.prevHitHeight = 0;
     this.referenceNormal = new THREE.Vector3();
     this.curveMissColor = new THREE.Color();
     this.curveHitColor = new THREE.Color();
@@ -214,10 +215,14 @@ AFRAME.registerComponent('teleport-controls', {
   /**
    * Jump!
    */
-  onButtonUp: function (evt) {
-    if (!this.active) { return; }
+  onButtonUp: (function() {
+    const rigWorldPosition = new THREE.Vector3();
+    const teleportOriginWorldPosition = new THREE.Vector3();
+    const newRigWorldPosition = new THREE.Vector3();
+    const newRigLocalPosition = new THREE.Vector3();
 
-    // Jump!
+  return function (evt) {
+    if (!this.active) { return; }
 
     // Hide the hit point and the curve
     this.active = false;
@@ -229,40 +234,46 @@ AFRAME.registerComponent('teleport-controls', {
       return;
     }
 
-    // @todo Create this aux vectors outside
-    if (this.data.cameraRig) {
-      var cameraRigPosition = new THREE.Vector3().copy(this.data.cameraRig.getAttribute('position'));
-      var newCameraRigPositionY = cameraRigPosition.y + this.hitPoint.y - this.prevHeightDiff;
-      var newCameraRigPosition = new THREE.Vector3(this.hitPoint.x, newCameraRigPositionY, this.hitPoint.z);
-      this.prevHeightDiff = this.hitPoint.y;
-      this.data.cameraRig.setAttribute('position', newCameraRigPosition);
-    } else {
-      var cameraEl = this.el.sceneEl.camera.el;
-      var camPosition = new THREE.Vector3().copy(cameraEl.getAttribute('position'));
+    const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
+    rig.object3D.getWorldPosition(rigWorldPosition);
+    newRigWorldPosition.copy(this.hitPoint);
 
-      var newCamPositionY = camPosition.y + this.hitPoint.y - this.prevHeightDiff;
-      var newCamPosition = new THREE.Vector3(this.hitPoint.x, newCamPositionY, this.hitPoint.z);
-      this.prevHeightDiff = this.hitPoint.y;
+    // If a teleportOrigin exists, offset the rig such that the teleportOrigin is above the hitPoint
+    const teleportOrigin = this.data.teleportOrigin;
+    if (teleportOrigin) {
+      teleportOrigin.object3D.getWorldPosition(teleportOriginWorldPosition);
+      newRigWorldPosition.sub(teleportOriginWorldPosition).add(rigWorldPosition);
+    }
 
-      cameraEl.setAttribute('position', newCamPosition);
+    // Always keep the rig at the same offset off the ground after teleporting
+    newRigWorldPosition.y = rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
+    this.prevHitHeight = this.hitPoint.y;
 
-      // Find the hands and move them proportionally
+    // Finally update the rigs position
+    newRigLocalPosition.copy(newRigWorldPosition);
+    if(rig.object3D.parent) {
+      rig.object3D.parent.worldToLocal(newRigLocalPosition);
+    }
+    rig.setAttribute('position', newRigLocalPosition);
+
+    // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
+    if (!this.data.cameraRig) { 
       var hands = document.querySelectorAll('a-entity[tracked-controls]');
       for (var i = 0; i < hands.length; i++) {
         var position = hands[i].getAttribute('position');
-        var pos = new THREE.Vector3().copy(position);
-        var diff = camPosition.clone().sub(pos);
-        var newPosition = newCamPosition.clone().sub(diff);
+        var diff =rigWorldPosition.clone().sub(position);
+        var newPosition = newRigWorldPosition.clone().sub(diff);
         hands[i].setAttribute('position', newPosition);
       }
     }
 
     this.el.emit('teleport', {
-      oldPosition: camPosition,
-      newPosition: newCamPosition,
+      oldPosition: rigWorldPosition,
+      newPosition: newRigWorldPosition,
       hitPoint: this.hitPoint
     });
-  },
+  };
+  })(),
 
   /**
    * Check for raycaster intersection.

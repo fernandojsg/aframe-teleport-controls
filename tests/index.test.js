@@ -8,6 +8,8 @@ suite('teleport-controls component', function () {
   var component;
   var el;
   var sceneEl;
+  var rig;
+  var teleportOrigin;
 
   setup(function (done) {
     el = entityFactory();
@@ -17,6 +19,18 @@ suite('teleport-controls component', function () {
       component = el.components['teleport-controls'];
       done();
     });
+
+    rig = document.createElement('a-entity');
+    rig.id = 'rig';
+    rig.setAttribute('position', '1 2 3');
+
+    teleportOrigin = document.createElement('a-entity');
+    teleportOrigin.id = 'origin';
+    teleportOrigin.setAttribute('position', '4 5 6');
+    rig.appendChild(teleportOrigin);
+
+    sceneEl.appendChild(rig);
+
     el.setAttribute('teleport-controls', {});
   });
 
@@ -139,6 +153,24 @@ suite('teleport-controls component', function () {
       component.hitPoint = {x: 10, y: 20, z: 30};
       component.onButtonUp();
       assert.shallowDeepEqual(cameraEl.getAttribute('position'), {x: 10, y: 21.6, z: 30});
+    });
+
+    test('teleports rig', function () {
+      el.setAttribute('teleport-controls', 'cameraRig', '#rig');
+
+      component.hitPoint = {x: 10, y: 20, z: 30};
+      component.onButtonUp();
+      assert.shallowDeepEqual(rig.getAttribute('position'), {x: 10, y: 22, z: 30});
+    });
+
+    test('teleports rig relative to teleportOrigin', function () {
+      el.setAttribute('teleport-controls', 'cameraRig', '#rig');
+      el.setAttribute('teleport-controls', 'teleportOrigin', '#origin');
+
+      component.hitPoint = {x: 10, y: 20, z: 30};
+      component.onButtonUp();
+      assert.shallowDeepEqual(rig.getAttribute('position'), {x: 6, y: 22, z: 24});
+      assert.shallowDeepEqual(teleportOrigin.getAttribute('position'), {x: 4, y: 5, z: 6});
     });
 
     test('teleports tracked-controls', function (done) {
