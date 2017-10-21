@@ -6,26 +6,28 @@ Teleport component
 
 ## Properties
 
-| Property    | Description                     | Default Value    |
-| --------    | -----------                     | -------------    |
-| cameraRig       | Selector of the camera Rig to teleport         |    |
-| teleportOrigin | Selector of the child of cameraRig to use as the center point for teleporting, typically the camera. If set teleporting will position the cameraRig such that this element ends up above the teleport location (rather than the center of the camreaRig) |    |
-| type       | Type of teleport: line or parabolic         | parabolic   |
-| button       | Button used to launch the teleport: trackpad, trigger, grip, menu         | trackpad   |
-| collisionEntities | Selector of the meshes used to check the collisions. If no value provided a plane Y=0 is used |  |
-| hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
-| hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
-| hitCylinderRadius | Radius used for the default `hitEntity` primitives | 0.25          |
-| hitCylinderHeight | Height used for the default `hitEntity` primitives | 0.3 |
-| curveHitColor | Color used for the curve when hit the mesh | #99ff99          |
-| curveMissColor | Color used for the curve when it doesn't hit anything | #ff0000          |
-| curveNumberPoints | Number of points used in the curve | 30          |
-| curveLineWidth | Line width of the curve | 0.025          |
-| curveShootingSpeed | Curve shooting speed, as bigger value, farther distance. | 5          |
-| defaultPlaneSize | Default plane size | 100 |
-| maxLength | Max length of the ray when using type=line teleport | 10 |
-| landingNormal | Normal vector to detect collisions with the `collisionEntity` | (0, 1, 0)          |
-| landingMaxAngle | Angle threshold (in degrees) used together with `landingNormal` to detect if the mesh is so steep to jump to it. | 45          |
+| Property           | Description                                                                                                                                                                                                                                              | Default Value |
+| --------           | -----------                                                                                                                                                                                                                                              | ------------- |
+| cameraRig          | Selector of the camera Rig to teleport                                                                                                                                                                                                                   |               |
+| teleportOrigin     | Selector of the child of cameraRig to use as the center point for teleporting, typically the camera. If set teleporting will position the cameraRig such that this element ends up above the teleport location (rather than the center of the camreaRig) |               |
+| type               | Type of teleport: line or parabolic                                                                                                                                                                                                                      | parabolic     |
+| button             | Button used to launch the teleport: trackpad, trigger, grip, menu                                                                                                                                                                                        | trackpad      |
+| collisionEntities  | Selector of the meshes used to check the collisions. If no value provided a plane Y=0 is used                                                                                                                                                            |               |
+| downEvents         | Alternative to `button`, list of events to listen to start telporting.                                                                                                                                                                                   | []            |
+| hitEntity          | Entity used to show at the hitting position. If no value provided a cylinder will be used as default.                                                                                                                                                    |               |
+| hitCylinderColor   | Color used for the default `hitEntity` primitives                                                                                                                                                                                                        | #99ff99       |
+| hitCylinderRadius  | Radius used for the default `hitEntity` primitives                                                                                                                                                                                                       | 0.25          |
+| hitCylinderHeight  | Height used for the default `hitEntity` primitives                                                                                                                                                                                                       | 0.3           |
+| curveHitColor      | Color used for the curve when hit the mesh                                                                                                                                                                                                               | #99ff99       |
+| curveMissColor     | Color used for the curve when it doesn't hit anything                                                                                                                                                                                                    | #ff0000       |
+| curveNumberPoints  | Number of points used in the curve                                                                                                                                                                                                                       | 30            |
+| curveLineWidth     | Line width of the curve                                                                                                                                                                                                                                  | 0.025         |
+| curveShootingSpeed | Curve shooting speed, as bigger value, farther distance.                                                                                                                                                                                                 | 5             |
+| defaultPlaneSize   | Default plane size                                                                                                                                                                                                                                       | 100           |
+| maxLength          | Max length of the ray when using type=line teleport                                                                                                                                                                                                      | 10            |
+| landingNormal      | Normal vector to detect collisions with the `collisionEntity`                                                                                                                                                                                            | (0, 1, 0)     |
+| landingMaxAngle    | Angle threshold (in degrees) used together with `landingNormal` to detect if the mesh is so steep to jump to it.                                                                                                                                         | 45            |
+| upEvents           | Paired with `downEvents`, list of events to listen for to finish teleporting.                                                                                                                                                                            | []            |
 
 ### Usage
 

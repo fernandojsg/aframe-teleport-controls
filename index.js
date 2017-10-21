@@ -27,6 +27,8 @@ AFRAME.registerComponent('teleport-controls', {
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
     button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
     collisionEntities: {default: ''},
+    downEvents: {type: 'array'},
+    upEvents: {type: 'array'},
     hitEntity: {type: 'selector'},
     cameraRig: {type: 'selector'},
     teleportOrigin: {type: 'selector'},
@@ -47,6 +49,7 @@ AFRAME.registerComponent('teleport-controls', {
   init: function () {
     var data = this.data;
     var el = this.el;
+    var i;
     var teleportEntity;
 
     this.active = false;
@@ -66,8 +69,20 @@ AFRAME.registerComponent('teleport-controls', {
     teleportEntity.setAttribute('visible', false);
     el.sceneEl.appendChild(this.teleportEntity);
 
-    el.addEventListener(data.button + 'down', this.onButtonDown.bind(this));
-    el.addEventListener(data.button + 'up', this.onButtonUp.bind(this));
+    // Add button/event listeners.
+    this.onButtonDown = this.onButtonDown.bind(this);
+    this.onButtonUp = this.onButtonUp.bind(this);
+    if (this.data.downEvents.length && this.data.upEvents.length) {
+      for (i = 0; i < this.data.downEvents.length; i++) {
+        el.addEventListener(this.data.downEvents[i], this.onButtonDown);
+      }
+      for (i = 0; i < this.data.upEvents.length; i++) {
+        el.addEventListener(this.data.upEvents[i], this.onButtonUp);
+      }
+    } else {
+      el.addEventListener(data.button + 'down', this.onButtonDown);
+      el.addEventListener(data.button + 'up', this.onButtonUp);
+    }
 
     this.queryCollisionEntities();
   },
@@ -257,7 +272,7 @@ AFRAME.registerComponent('teleport-controls', {
     rig.setAttribute('position', newRigLocalPosition);
 
     // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
-    if (!this.data.cameraRig) { 
+    if (!this.data.cameraRig) {
       var hands = document.querySelectorAll('a-entity[tracked-controls]');
       for (var i = 0; i < hands.length; i++) {
         var position = hands[i].getAttribute('position');
