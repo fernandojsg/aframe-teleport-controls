@@ -1,4 +1,4 @@
-/* global THREE, AFRAME  */
+/* global THREE, AFRAME, Element  */
 var cylinderTexture = require('./lib/cylinderTexture');
 var parabolicCurve = require('./lib/ParabolicCurve');
 var RayCurve = require('./lib/RayCurve');
@@ -184,7 +184,7 @@ AFRAME.registerComponent('teleport-controls', {
 
     if (!data.collisionEntities) {
       this.collisionEntities = [];
-      return
+      return;
     }
 
     collisionEntities = [].slice.call(el.sceneEl.querySelectorAll(data.collisionEntities));
@@ -215,64 +215,64 @@ AFRAME.registerComponent('teleport-controls', {
   /**
    * Jump!
    */
-  onButtonUp: (function() {
+  onButtonUp: (function () {
     const rigWorldPosition = new THREE.Vector3();
     const teleportOriginWorldPosition = new THREE.Vector3();
     const newRigWorldPosition = new THREE.Vector3();
     const newRigLocalPosition = new THREE.Vector3();
 
-  return function (evt) {
-    if (!this.active) { return; }
+    return function (evt) {
+      if (!this.active) { return; }
 
-    // Hide the hit point and the curve
-    this.active = false;
-    this.hitEntity.setAttribute('visible', false);
-    this.teleportEntity.setAttribute('visible', false);
+      // Hide the hit point and the curve
+      this.active = false;
+      this.hitEntity.setAttribute('visible', false);
+      this.teleportEntity.setAttribute('visible', false);
 
-    if (!this.hit) {
-      // Button released but not hit point
-      return;
-    }
-
-    const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
-    rig.object3D.getWorldPosition(rigWorldPosition);
-    newRigWorldPosition.copy(this.hitPoint);
-
-    // If a teleportOrigin exists, offset the rig such that the teleportOrigin is above the hitPoint
-    const teleportOrigin = this.data.teleportOrigin;
-    if (teleportOrigin) {
-      teleportOrigin.object3D.getWorldPosition(teleportOriginWorldPosition);
-      newRigWorldPosition.sub(teleportOriginWorldPosition).add(rigWorldPosition);
-    }
-
-    // Always keep the rig at the same offset off the ground after teleporting
-    newRigWorldPosition.y = rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
-    this.prevHitHeight = this.hitPoint.y;
-
-    // Finally update the rigs position
-    newRigLocalPosition.copy(newRigWorldPosition);
-    if(rig.object3D.parent) {
-      rig.object3D.parent.worldToLocal(newRigLocalPosition);
-    }
-    rig.setAttribute('position', newRigLocalPosition);
-
-    // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
-    if (!this.data.cameraRig) { 
-      var hands = document.querySelectorAll('a-entity[tracked-controls]');
-      for (var i = 0; i < hands.length; i++) {
-        var position = hands[i].getAttribute('position');
-        var diff =rigWorldPosition.clone().sub(position);
-        var newPosition = newRigWorldPosition.clone().sub(diff);
-        hands[i].setAttribute('position', newPosition);
+      if (!this.hit) {
+        // Button released but not hit point
+        return;
       }
-    }
 
-    this.el.emit('teleport', {
-      oldPosition: rigWorldPosition,
-      newPosition: newRigWorldPosition,
-      hitPoint: this.hitPoint
-    });
-  };
+      const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
+      rig.object3D.getWorldPosition(rigWorldPosition);
+      newRigWorldPosition.copy(this.hitPoint);
+
+      // If a teleportOrigin exists, offset the rig such that the teleportOrigin is above the hitPoint
+      const teleportOrigin = this.data.teleportOrigin;
+      if (teleportOrigin) {
+        teleportOrigin.object3D.getWorldPosition(teleportOriginWorldPosition);
+        newRigWorldPosition.sub(teleportOriginWorldPosition).add(rigWorldPosition);
+      }
+
+      // Always keep the rig at the same offset off the ground after teleporting
+      newRigWorldPosition.y = rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
+      this.prevHitHeight = this.hitPoint.y;
+
+      // Finally update the rigs position
+      newRigLocalPosition.copy(newRigWorldPosition);
+      if (rig.object3D.parent) {
+        rig.object3D.parent.worldToLocal(newRigLocalPosition);
+      }
+      rig.setAttribute('position', newRigLocalPosition);
+
+      // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
+      if (!this.data.cameraRig) {
+        var hands = document.querySelectorAll('a-entity[tracked-controls]');
+        for (var i = 0; i < hands.length; i++) {
+          var position = hands[i].getAttribute('position');
+          var diff = rigWorldPosition.clone().sub(position);
+          var newPosition = newRigWorldPosition.clone().sub(diff);
+          hands[i].setAttribute('position', newPosition);
+        }
+      }
+
+      this.el.emit('teleport', {
+        oldPosition: rigWorldPosition,
+        newPosition: newRigWorldPosition,
+        hitPoint: this.hitPoint
+      });
+    };
   })(),
 
   /**
@@ -384,7 +384,7 @@ function createDefaultPlane (size) {
   var material;
 
   geometry = new THREE.PlaneBufferGeometry(100, 100);
-  geometry.rotateX(- Math.PI / 2)
+  geometry.rotateX(-Math.PI / 2);
   material = new THREE.MeshBasicMaterial({color: 0xffff00});
   return new THREE.Mesh(geometry, material);
 }
