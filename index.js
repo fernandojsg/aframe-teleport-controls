@@ -119,11 +119,17 @@ AFRAME.registerComponent('teleport-controls', {
 
   tick: (function () {
     var p0 = new THREE.Vector3();
+    var v0 = new THREE.Vector3();
+    var g = -9.8;
+    var a = new THREE.Vector3(0, g, 0);
+    var next = new THREE.Vector3();
+    var last = new THREE.Vector3();
     var quaternion = new THREE.Quaternion();
     var translation = new THREE.Vector3();
     var scale = new THREE.Vector3();
     var shootAngle = new THREE.Vector3();
     var lastNext = new THREE.Vector3();
+    var auxDirection = new THREE.Vector3();
 
     return function (time, delta) {
       if (!this.active) { return; }
@@ -133,11 +139,10 @@ AFRAME.registerComponent('teleport-controls', {
 
       var direction = shootAngle.set(0, 0, -1)
         .applyQuaternion(quaternion).normalize();
-      this.line.setDirection(direction.clone());
-      p0.copy(this.obj.getWorldPosition());
+      this.line.setDirection(auxDirection.copy(direction));
+      this.obj.getWorldPosition(p0);
 
-      var last = p0.clone();
-      var next;
+      last.copy(p0);
 
       // Set default status as non-hit
       this.teleportEntity.setAttribute('visible', true);
@@ -146,13 +151,11 @@ AFRAME.registerComponent('teleport-controls', {
       this.hit = false;
 
       if (this.data.type === 'parabolic') {
-        var v0 = direction.clone().multiplyScalar(this.data.curveShootingSpeed);
-        var g = -9.8;
-        var a = new THREE.Vector3(0, g, 0);
+        v0.copy(direction).multiplyScalar(this.data.curveShootingSpeed);
 
         for (var i = 0; i < this.line.numPoints; i++) {
           var t = i / (this.line.numPoints - 1);
-          next = parabolicCurve(p0, v0, a, t);
+          parabolicCurve(p0, v0, a, t, next);
           // Update the raycaster with the length of the current segment last->next
           var dirLastNext = lastNext.copy(next).sub(last).normalize();
           this.raycaster.far = dirLastNext.length();
@@ -162,9 +165,8 @@ AFRAME.registerComponent('teleport-controls', {
           last.copy(next);
         }
       } else if (this.data.type === 'line') {
-        next = last.add(direction.clone().multiplyScalar(this.data.maxLength));
+        next.copy(last).add(auxDirection.copy(direction).multiplyScalar(this.data.maxLength));
         this.raycaster.far = this.data.maxLength;
-
         this.raycaster.set(p0, direction);
         this.line.setPoint(0, p0);
 
@@ -220,6 +222,7 @@ AFRAME.registerComponent('teleport-controls', {
     const teleportOriginWorldPosition = new THREE.Vector3();
     const newRigWorldPosition = new THREE.Vector3();
     const newRigLocalPosition = new THREE.Vector3();
+    const auxVector3 = new THREE.Vector3();
 
     return function (evt) {
       if (!this.active) { return; }
@@ -261,8 +264,8 @@ AFRAME.registerComponent('teleport-controls', {
         var hands = document.querySelectorAll('a-entity[tracked-controls]');
         for (var i = 0; i < hands.length; i++) {
           var position = hands[i].getAttribute('position');
-          var diff = rigWorldPosition.clone().sub(position);
-          var newPosition = newRigWorldPosition.clone().sub(diff);
+          var diff = auxVector3.copy(rigWorldPosition).sub(position);
+          var newPosition = auxVector3.copy(newRigWorldPosition).sub(diff);
           hands[i].setAttribute('position', newPosition);
         }
       }
