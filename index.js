@@ -69,7 +69,6 @@ AFRAME.registerComponent('teleport-controls', {
     el.addEventListener(data.button + 'down', this.onButtonDown.bind(this));
     el.addEventListener(data.button + 'up', this.onButtonUp.bind(this));
 
-    this.collisionMeshes = [];
     this.queryCollisionEntities();
   },
 
@@ -183,12 +182,10 @@ AFRAME.registerComponent('teleport-controls', {
   queryCollisionEntities: function () {
     var collisionEntities;
     var data = this.data;
-    var self = this;
     var el = this.el;
 
     if (!data.collisionEntities) {
       this.collisionEntities = [];
-      this.buildCollisionMeshesList();
       return;
     }
 
@@ -199,7 +196,6 @@ AFRAME.registerComponent('teleport-controls', {
     this.childAttachHandler = function childAttachHandler (evt) {
       if (!evt.detail.el.matches(data.collisionEntities)) { return; }
       collisionEntities.push(evt.detail.el);
-      self.buildCollisionMeshesList();
     };
     el.sceneEl.addEventListener('child-attached', this.childAttachHandler);
 
@@ -210,18 +206,8 @@ AFRAME.registerComponent('teleport-controls', {
       index = collisionEntities.indexOf(evt.detail.el);
       if (index === -1) { return; }
       collisionEntities.splice(index, 1);
-      self.buildCollisionMeshesList();
     };
     el.sceneEl.addEventListener('child-detached', this.childDetachHandler);
-
-    this.buildCollisionMeshesList();
-  },
-
-  buildCollisionMeshesList: function () {
-    this.collisionMeshes = this.collisionEntities.map(function (entity) {
-      return entity.getObject3D('mesh');
-    }).filter(function (n) { return n; });
-    this.collisionMeshes = this.collisionMeshes.length ? this.collisionMeshes : [this.defaultPlane];
   },
 
   onButtonDown: function () {
@@ -300,7 +286,15 @@ AFRAME.registerComponent('teleport-controls', {
    * @returns {boolean} true if there's an intersection.
    */
   checkMeshCollisions: function (i, next) {
-    var intersects = this.raycaster.intersectObjects(this.collisionMeshes, true);
+    // @todo We should add a property to define if the collisionEntity is dynamic or static
+    // If static we should do the map just once, otherwise we're recreating the array in every
+    // loop when aiming.
+    var meshes = this.collisionEntities.map(function (entity) {
+      return entity.getObject3D('mesh');
+    }).filter(function (n) { return n; });
+    meshes = meshes.length ? meshes : [this.defaultPlane];
+
+    var intersects = this.raycaster.intersectObjects(meshes, true);
     if (intersects.length > 0 && !this.hit &&
         this.isValidNormalsAngle(intersects[0].face.normal)) {
       var point = intersects[0].point;
