@@ -26,6 +26,8 @@ AFRAME.registerComponent('teleport-controls', {
   schema: {
     type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
     button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
+    startEvents: {type: 'array'},
+    endEvents: {type: 'array'},
     collisionEntities: {default: ''},
     hitEntity: {type: 'selector'},
     cameraRig: {type: 'selector'},
@@ -48,6 +50,7 @@ AFRAME.registerComponent('teleport-controls', {
     var data = this.data;
     var el = this.el;
     var teleportEntity;
+    var i;
 
     this.active = false;
     this.obj = el.object3D;
@@ -66,8 +69,19 @@ AFRAME.registerComponent('teleport-controls', {
     teleportEntity.setAttribute('visible', false);
     el.sceneEl.appendChild(this.teleportEntity);
 
-    el.addEventListener(data.button + 'down', this.onButtonDown.bind(this));
-    el.addEventListener(data.button + 'up', this.onButtonUp.bind(this));
+    this.onButtonDown = this.onButtonDown.bind(this);
+    this.onButtonUp = this.onButtonUp.bind(this);
+    if (this.data.startEvents.length && this.data.endEvents.length) {
+      for (i = 0; i < this.data.startEvents.length; i++) {
+        el.addEventListener(this.data.startEvents[i], this.onButtonDown);
+      }
+      for (i = 0; i < this.data.endEvents.length; i++) {
+        el.addEventListener(this.data.endEvents[i], this.onButtonUp);
+      }
+    } else {
+      el.addEventListener(data.button + 'down', this.onButtonDown);
+      el.addEventListener(data.button + 'up', this.onButtonUp);
+    }
 
     this.queryCollisionEntities();
   },
