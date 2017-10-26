@@ -221,7 +221,6 @@ AFRAME.registerComponent('teleport-controls', {
     this.collisionMeshes = this.collisionEntities.map(function (entity) {
       return entity.getObject3D('mesh');
     }).filter(function (n) { return n; });
-    console.log(this.buildCollisionMeshesList, this.defaultPlane);
     this.collisionMeshes = this.collisionMeshes.length ? this.collisionMeshes : [this.defaultPlane];
   },
 
