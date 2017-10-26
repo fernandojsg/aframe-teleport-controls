@@ -3,6 +3,7 @@
   <head>
     <script src="../build.js"></script>
     <script src="../common/shaders/skyGradient.js"></script>
+    <script src="https://unpkg.com/aframe-input-mapping-component@0.1.0/dist/aframe-input-mapping-component.min.js"></script>
   </head>
   <body style="background-color: #000">
     <a-scene>
@@ -40,21 +41,47 @@
                   maxLength: 30;
                   type: line;
                   hitEntity: #hintEntity;"
-                  vive-controls="hand: left">
+                  vive-controls="hand: left"
+                  oculus-touch-controls="hand: left"
+                  microsoft-motion-controls="hand: left"
+                  daydream-controls="" gearvr-controls="">
         </a-entity>
         <a-entity id="right-hand"
                   teleport-controls="collisionEntities: #floorRight;
                   button: trigger;
                   cameraRig: #cameraRig;
-                  teleportOrigin: #head; 
+                  teleportOrigin: #head;
                   curveHitColor: #9999ff;
                   curveMissColor: #ff0000;
                   curveNumberPoints: 50;
                   curveLineWidth: 0.015;
                   curveShootingSpeed: 4"
-              vive-controls="hand: right">
+              vive-controls="hand: right"
+              microsoft-motion-controls="hand: right"
+              oculus-touch-controls="hand: right">
         </a-entity>
       </a-entity>
     </a-scene>
+    <script>
+    var mappings = {
+        mappings: {
+          default: {
+            common: {
+              trackpaddown: 'teleportstart',
+              trackpadup: 'teleportend'
+            },
+            'oculus-touch-controls': {
+              abuttondown: 'teleportstart',
+              abuttonup: 'teleportend'
+            },
+            keyboard: {
+              't_down': 'teleportstart',
+              't_up': 'teleportend'
+            }
+          }
+        }
+      };
+      AFRAME.registerInputMappings(mappings);
+    </script>
   </body>
 </html>

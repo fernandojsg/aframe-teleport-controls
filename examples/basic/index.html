@@ -3,6 +3,7 @@
   <head>
     <script src="../build.js"></script>
     <script src="../common/shaders/skyGradient.js"></script>
+    <script src="https://unpkg.com/aframe-input-mapping-component@0.1.0/dist/aframe-input-mapping-component.min.js"></script>
   </head>
   <body style="background-color: #000">
     <a-scene>
@@ -16,9 +17,39 @@
                 material="src: url(floor.jpg); repeat: 80 80">
       </a-entity>
       <!-- hand controls -->
-      <a-entity teleport-controls vive-controls="hand: left"></a-entity>
-      <a-entity teleport-controls="type: line" vive-controls="hand: right"></a-entity>
+      <a-entity teleport-controls="startEvents: teleportstart"
+        vive-controls="hand: left"
+        oculus-touch-controls="hand: left"
+        microsoft-motion-controls="hand: left"
+        daydream-controls="" gearvr-controls="">
+      </a-entity>
+      <a-entity teleport-controls="startEvents: teleportstart; endEvents: teleportend; type: line"
+        vive-controls="hand: right"
+        microsoft-motion-controls="hand: right"
+        oculus-touch-controls="hand: right">
+      </a-entity>
       </a-entity>
     </a-scene>
+    <script>
+    var mappings = {
+        mappings: {
+          default: {
+            common: {
+              trackpaddown: 'teleportstart',
+              trackpadup: 'teleportend'
+            },
+            'oculus-touch-controls': {
+              abuttondown: 'teleportstart',
+              abuttonup: 'teleportend'
+            },
+            keyboard: {
+              't_down': 'teleportstart',
+              't_up': 'teleportend'
+            }
+          }
+        }
+      };
+      AFRAME.registerInputMappings(mappings);
+    </script>
   </body>
 </html>
