@@ -28,7 +28,7 @@ Teleport component
 | maxLength | Max length of the ray when using type=line teleport | 10 |
 | landingNormal | Normal vector to detect collisions with the `collisionEntity` | (0, 1, 0)          |
 | landingMaxAngle | Angle threshold (in degrees) used together with `landingNormal` to detect if the mesh is so steep to jump to it. | 45          |
-| startEvents | Alternative to `button`, list of events to listen to start telporting.| [] |
+| startEvents | Alternative to `button`, list of events to listen to start teleporting.| [] |
 
 ### Usage
 
