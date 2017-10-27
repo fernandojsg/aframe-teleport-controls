@@ -242,7 +242,8 @@ AFRAME.registerComponent('teleport-controls', {
   onButtonUp: (function () {
     const teleportOriginWorldPosition = new THREE.Vector3();
     const newRigLocalPosition = new THREE.Vector3();
-    const auxVector3 = new THREE.Vector3();
+    const newHandPosition = new THREE.Vector3();
+    const handPosition = new THREE.Vector3();
 
     return function (evt) {
       if (!this.active) { return; }
@@ -283,10 +284,12 @@ AFRAME.registerComponent('teleport-controls', {
       if (!this.data.cameraRig) {
         var hands = document.querySelectorAll('a-entity[tracked-controls]');
         for (var i = 0; i < hands.length; i++) {
-          var position = hands[i].getAttribute('position');
-          var diff = auxVector3.copy(this.rigWorldPosition).sub(position);
-          var newPosition = auxVector3.copy(this.newRigWorldPosition).sub(diff);
-          hands[i].setAttribute('position', newPosition);
+          hands[i].object3D.getWorldPosition(handPosition);
+
+          // diff = rigWorldPosition - handPosition
+          // newPos = newRigWorldPosition - diff
+          newHandPosition.copy(this.newRigWorldPosition).sub(this.rigWorldPosition).add(handPosition);
+          hands[i].setAttribute('position', newHandPosition);
         }
       }
 
