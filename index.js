@@ -55,6 +55,14 @@ AFRAME.registerComponent('teleport-controls', {
     this.active = false;
     this.obj = el.object3D;
     this.hitPoint = new THREE.Vector3();
+    this.rigWorldPosition = new THREE.Vector3();
+    this.newRigWorldPosition = new THREE.Vector3();
+    this.teleportEventDetail = {
+      oldPosition: this.rigWorldPosition,
+      newPosition: this.newRigWorldPosition,
+      hitPoint: this.hitPoint
+    };
+
     this.hit = false;
     this.prevHitHeight = 0;
     this.referenceNormal = new THREE.Vector3();
@@ -232,9 +240,7 @@ AFRAME.registerComponent('teleport-controls', {
    * Jump!
    */
   onButtonUp: (function () {
-    const rigWorldPosition = new THREE.Vector3();
     const teleportOriginWorldPosition = new THREE.Vector3();
-    const newRigWorldPosition = new THREE.Vector3();
     const newRigLocalPosition = new THREE.Vector3();
     const auxVector3 = new THREE.Vector3();
 
@@ -252,22 +258,22 @@ AFRAME.registerComponent('teleport-controls', {
       }
 
       const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
-      rig.object3D.getWorldPosition(rigWorldPosition);
-      newRigWorldPosition.copy(this.hitPoint);
+      rig.object3D.getWorldPosition(this.rigWorldPosition);
+      this.newRigWorldPosition.copy(this.hitPoint);
 
       // If a teleportOrigin exists, offset the rig such that the teleportOrigin is above the hitPoint
       const teleportOrigin = this.data.teleportOrigin;
       if (teleportOrigin) {
         teleportOrigin.object3D.getWorldPosition(teleportOriginWorldPosition);
-        newRigWorldPosition.sub(teleportOriginWorldPosition).add(rigWorldPosition);
+        this.newRigWorldPosition.sub(teleportOriginWorldPosition).add(this.rigWorldPosition);
       }
 
       // Always keep the rig at the same offset off the ground after teleporting
-      newRigWorldPosition.y = rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
+      this.newRigWorldPosition.y = this.rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
       this.prevHitHeight = this.hitPoint.y;
 
       // Finally update the rigs position
-      newRigLocalPosition.copy(newRigWorldPosition);
+      newRigLocalPosition.copy(this.newRigWorldPosition);
       if (rig.object3D.parent) {
         rig.object3D.parent.worldToLocal(newRigLocalPosition);
       }
@@ -278,17 +284,13 @@ AFRAME.registerComponent('teleport-controls', {
         var hands = document.querySelectorAll('a-entity[tracked-controls]');
         for (var i = 0; i < hands.length; i++) {
           var position = hands[i].getAttribute('position');
-          var diff = auxVector3.copy(rigWorldPosition).sub(position);
-          var newPosition = auxVector3.copy(newRigWorldPosition).sub(diff);
+          var diff = auxVector3.copy(this.rigWorldPosition).sub(position);
+          var newPosition = auxVector3.copy(this.newRigWorldPosition).sub(diff);
           hands[i].setAttribute('position', newPosition);
         }
       }
 
-      this.el.emit('teleport', {
-        oldPosition: rigWorldPosition,
-        newPosition: newRigWorldPosition,
-        hitPoint: this.hitPoint
-      });
+      this.el.emit('teleported', this.teleportEventDetail);
     };
   })(),
 
