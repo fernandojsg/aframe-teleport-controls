@@ -14,7 +14,6 @@ Teleport component
 | button       | Button used to launch the teleport: trackpad, trigger, grip, menu         | trackpad   |
 | collisionEntities | Selector of the meshes used to check the collisions. If no value provided a plane Y=0 is used |  |
 | endEvents | Paired with `startEvents`, list of events to listen for to finish teleporting.| []            |
-| teleportStartEvents         | Alternative to `button`, list of events to listen to start teleporting.| []            |
 | hitEntity | Entity used to show at the hitting position. If no value provided a cylinder will be used as default. |           |
 | hitCylinderColor | Color used for the default `hitEntity` primitives | #99ff99          |
 | hitCylinderRadius | Radius used for the default `hitEntity` primitives | 0.25          |
