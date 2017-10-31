@@ -42,9 +42,9 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
-	/* global THREE, AFRAME  */
+	/* global THREE, AFRAME, Element  */
 	var cylinderTexture = __webpack_require__(1);
 	var parabolicCurve = __webpack_require__(2);
 	var RayCurve = __webpack_require__(3);
@@ -72,6 +72,8 @@
 	  schema: {
 	    type: {default: 'parabolic', oneOf: ['parabolic', 'line']},
 	    button: {default: 'trackpad', oneOf: ['trackpad', 'trigger', 'grip', 'menu']},
+	    startEvents: {type: 'array'},
+	    endEvents: {type: 'array'},
 	    collisionEntities: {default: ''},
 	    hitEntity: {type: 'selector'},
 	    cameraRig: {type: 'selector'},
@@ -94,10 +96,19 @@
 	    var data = this.data;
 	    var el = this.el;
 	    var teleportEntity;
+	    var i;
 
 	    this.active = false;
 	    this.obj = el.object3D;
 	    this.hitPoint = new THREE.Vector3();
+	    this.rigWorldPosition = new THREE.Vector3();
+	    this.newRigWorldPosition = new THREE.Vector3();
+	    this.teleportEventDetail = {
+	      oldPosition: this.rigWorldPosition,
+	      newPosition: this.newRigWorldPosition,
+	      hitPoint: this.hitPoint
+	    };
+
 	    this.hit = false;
 	    this.prevHitHeight = 0;
 	    this.referenceNormal = new THREE.Vector3();
@@ -112,8 +123,20 @@
 	    teleportEntity.setAttribute('visible', false);
 	    el.sceneEl.appendChild(this.teleportEntity);
 
-	    el.addEventListener(data.button + 'down', this.onButtonDown.bind(this));
-	    el.addEventListener(data.button + 'up', this.onButtonUp.bind(this));
+	    this.onButtonDown = this.onButtonDown.bind(this);
+	    this.onButtonUp = this.onButtonUp.bind(this);
+	    if (this.data.startEvents.length && this.data.endEvents.length) {
+
+	      for (i = 0; i < this.data.startEvents.length; i++) {
+	        el.addEventListener(this.data.startEvents[i], this.onButtonDown);
+	      }
+	      for (i = 0; i < this.data.endEvents.length; i++) {
+	        el.addEventListener(this.data.endEvents[i], this.onButtonUp);
+	      }
+	    } else {
+	      el.addEventListener(data.button + 'down', this.onButtonDown);
+	      el.addEventListener(data.button + 'up', this.onButtonUp);
+	    }
 
 	    this.queryCollisionEntities();
 	  },
@@ -165,11 +188,17 @@
 
 	  tick: (function () {
 	    var p0 = new THREE.Vector3();
+	    var v0 = new THREE.Vector3();
+	    var g = -9.8;
+	    var a = new THREE.Vector3(0, g, 0);
+	    var next = new THREE.Vector3();
+	    var last = new THREE.Vector3();
 	    var quaternion = new THREE.Quaternion();
 	    var translation = new THREE.Vector3();
 	    var scale = new THREE.Vector3();
 	    var shootAngle = new THREE.Vector3();
 	    var lastNext = new THREE.Vector3();
+	    var auxDirection = new THREE.Vector3();
 
 	    return function (time, delta) {
 	      if (!this.active) { return; }
@@ -179,11 +208,10 @@
 
 	      var direction = shootAngle.set(0, 0, -1)
 	        .applyQuaternion(quaternion).normalize();
-	      this.line.setDirection(direction.clone());
-	      p0.copy(this.obj.getWorldPosition());
+	      this.line.setDirection(auxDirection.copy(direction));
+	      this.obj.getWorldPosition(p0);
 
-	      var last = p0.clone();
-	      var next;
+	      last.copy(p0);
 
 	      // Set default status as non-hit
 	      this.teleportEntity.setAttribute('visible', true);
@@ -192,13 +220,11 @@
 	      this.hit = false;
 
 	      if (this.data.type === 'parabolic') {
-	        var v0 = direction.clone().multiplyScalar(this.data.curveShootingSpeed);
-	        var g = -9.8;
-	        var a = new THREE.Vector3(0, g, 0);
+	        v0.copy(direction).multiplyScalar(this.data.curveShootingSpeed);
 
 	        for (var i = 0; i < this.line.numPoints; i++) {
 	          var t = i / (this.line.numPoints - 1);
-	          next = parabolicCurve(p0, v0, a, t);
+	          parabolicCurve(p0, v0, a, t, next);
 	          // Update the raycaster with the length of the current segment last->next
 	          var dirLastNext = lastNext.copy(next).sub(last).normalize();
 	          this.raycaster.far = dirLastNext.length();
@@ -208,9 +234,8 @@
 	          last.copy(next);
 	        }
 	      } else if (this.data.type === 'line') {
-	        next = last.add(direction.clone().multiplyScalar(this.data.maxLength));
+	        next.copy(last).add(auxDirection.copy(direction).multiplyScalar(this.data.maxLength));
 	        this.raycaster.far = this.data.maxLength;
-
 	        this.raycaster.set(p0, direction);
 	        this.line.setPoint(0, p0);
 
@@ -230,7 +255,7 @@
 
 	    if (!data.collisionEntities) {
 	      this.collisionEntities = [];
-	      return
+	      return;
 	    }
 
 	    collisionEntities = [].slice.call(el.sceneEl.querySelectorAll(data.collisionEntities));
@@ -261,64 +286,62 @@
 	  /**
 	   * Jump!
 	   */
-	  onButtonUp: (function() {
-	    const rigWorldPosition = new THREE.Vector3();
+	  onButtonUp: (function () {
 	    const teleportOriginWorldPosition = new THREE.Vector3();
-	    const newRigWorldPosition = new THREE.Vector3();
 	    const newRigLocalPosition = new THREE.Vector3();
+	    const newHandPosition = new THREE.Vector3();
+	    const handPosition = new THREE.Vector3();
 
-	  return function (evt) {
-	    if (!this.active) { return; }
+	    return function (evt) {
+	      if (!this.active) { return; }
 
-	    // Hide the hit point and the curve
-	    this.active = false;
-	    this.hitEntity.setAttribute('visible', false);
-	    this.teleportEntity.setAttribute('visible', false);
+	      // Hide the hit point and the curve
+	      this.active = false;
+	      this.hitEntity.setAttribute('visible', false);
+	      this.teleportEntity.setAttribute('visible', false);
 
-	    if (!this.hit) {
-	      // Button released but not hit point
-	      return;
-	    }
-
-	    const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
-	    rig.object3D.getWorldPosition(rigWorldPosition);
-	    newRigWorldPosition.copy(this.hitPoint);
-
-	    // If a teleportOrigin exists, offset the rig such that the teleportOrigin is above the hitPoint
-	    const teleportOrigin = this.data.teleportOrigin;
-	    if (teleportOrigin) {
-	      teleportOrigin.object3D.getWorldPosition(teleportOriginWorldPosition);
-	      newRigWorldPosition.sub(teleportOriginWorldPosition).add(rigWorldPosition);
-	    }
-
-	    // Always keep the rig at the same offset off the ground after teleporting
-	    newRigWorldPosition.y = rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
-	    this.prevHitHeight = this.hitPoint.y;
-
-	    // Finally update the rigs position
-	    newRigLocalPosition.copy(newRigWorldPosition);
-	    if(rig.object3D.parent) {
-	      rig.object3D.parent.worldToLocal(newRigLocalPosition);
-	    }
-	    rig.setAttribute('position', newRigLocalPosition);
-
-	    // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
-	    if (!this.data.cameraRig) { 
-	      var hands = document.querySelectorAll('a-entity[tracked-controls]');
-	      for (var i = 0; i < hands.length; i++) {
-	        var position = hands[i].getAttribute('position');
-	        var diff =rigWorldPosition.clone().sub(position);
-	        var newPosition = newRigWorldPosition.clone().sub(diff);
-	        hands[i].setAttribute('position', newPosition);
+	      if (!this.hit) {
+	        // Button released but not hit point
+	        return;
 	      }
-	    }
 
-	    this.el.emit('teleport', {
-	      oldPosition: rigWorldPosition,
-	      newPosition: newRigWorldPosition,
-	      hitPoint: this.hitPoint
-	    });
-	  };
+	      const rig = this.data.cameraRig || this.el.sceneEl.camera.el;
+	      rig.object3D.getWorldPosition(this.rigWorldPosition);
+	      this.newRigWorldPosition.copy(this.hitPoint);
+
+	      // If a teleportOrigin exists, offset the rig such that the teleportOrigin is above the hitPoint
+	      const teleportOrigin = this.data.teleportOrigin;
+	      if (teleportOrigin) {
+	        teleportOrigin.object3D.getWorldPosition(teleportOriginWorldPosition);
+	        this.newRigWorldPosition.sub(teleportOriginWorldPosition).add(this.rigWorldPosition);
+	      }
+
+	      // Always keep the rig at the same offset off the ground after teleporting
+	      this.newRigWorldPosition.y = this.rigWorldPosition.y + this.hitPoint.y - this.prevHitHeight;
+	      this.prevHitHeight = this.hitPoint.y;
+
+	      // Finally update the rigs position
+	      newRigLocalPosition.copy(this.newRigWorldPosition);
+	      if (rig.object3D.parent) {
+	        rig.object3D.parent.worldToLocal(newRigLocalPosition);
+	      }
+	      rig.setAttribute('position', newRigLocalPosition);
+
+	      // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
+	      if (!this.data.cameraRig) {
+	        var hands = document.querySelectorAll('a-entity[tracked-controls]');
+	        for (var i = 0; i < hands.length; i++) {
+	          hands[i].object3D.getWorldPosition(handPosition);
+
+	          // diff = rigWorldPosition - handPosition
+	          // newPos = newRigWorldPosition - diff
+	          newHandPosition.copy(this.newRigWorldPosition).sub(this.rigWorldPosition).add(handPosition);
+	          hands[i].setAttribute('position', newHandPosition);
+	        }
+	      }
+
+	      this.el.emit('teleported', this.teleportEventDetail);
+	    };
 	  })(),
 
 	  /**
@@ -329,16 +352,15 @@
 	   * @returns {boolean} true if there's an intersection.
 	   */
 	  checkMeshCollisions: function (i, next) {
-	    var intersects;
-	    var meshes;
-
-	    // Gather the meshes here to avoid having to wait for entities to iniitalize.
-	    meshes = this.collisionEntities.map(function (entity) {
+	    // @todo We should add a property to define if the collisionEntity is dynamic or static
+	    // If static we should do the map just once, otherwise we're recreating the array in every
+	    // loop when aiming.
+	    var meshes = this.collisionEntities.map(function (entity) {
 	      return entity.getObject3D('mesh');
 	    }).filter(function (n) { return n; });
 	    meshes = meshes.length ? meshes : [this.defaultPlane];
 
-	    intersects = this.raycaster.intersectObjects(meshes, true);
+	    var intersects = this.raycaster.intersectObjects(meshes, true);
 	    if (intersects.length > 0 && !this.hit &&
 	        this.isValidNormalsAngle(intersects[0].face.normal)) {
 	      var point = intersects[0].point;
@@ -430,22 +452,22 @@
 	  var material;
 
 	  geometry = new THREE.PlaneBufferGeometry(100, 100);
-	  geometry.rotateX(- Math.PI / 2)
+	  geometry.rotateX(-Math.PI / 2);
 	  material = new THREE.MeshBasicMaterial({color: 0xffff00});
 	  return new THREE.Mesh(geometry, material);
 	}
 
 
-/***/ }),
+/***/ },
 /* 1 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = 'url(data:image/png;base64,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)';
 
 
-/***/ }),
+/***/ },
 /* 2 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	/* global THREE */
 	// Parabolic motion equation, y = p0 + v0*t + 1/2at^2
@@ -454,20 +476,19 @@
 	}
 
 	// Parabolic motion equation applied to 3 dimensions
-	function parabolicCurve (p0, v0, a, t) {
-	  var ret = new THREE.Vector3();
-	  ret.x = parabolicCurveScalar(p0.x, v0.x, a.x, t);
-	  ret.y = parabolicCurveScalar(p0.y, v0.y, a.y, t);
-	  ret.z = parabolicCurveScalar(p0.z, v0.z, a.z, t);
-	  return ret;
+	function parabolicCurve (p0, v0, a, t, out) {
+	  out.x = parabolicCurveScalar(p0.x, v0.x, a.x, t);
+	  out.y = parabolicCurveScalar(p0.y, v0.y, a.y, t);
+	  out.z = parabolicCurveScalar(p0.z, v0.z, a.z, t);
+	  return out;
 	}
 
 	module.exports = parabolicCurve;
 
 
-/***/ }),
+/***/ },
 /* 3 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	/* global THREE */
 	var RayCurve = function (numPoints, width) {
@@ -532,5 +553,5 @@
 	module.exports = RayCurve;
 
 
-/***/ })
+/***/ }
 /******/ ]);

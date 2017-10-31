@@ -80,6 +80,7 @@ AFRAME.registerComponent('teleport-controls', {
     this.onButtonDown = this.onButtonDown.bind(this);
     this.onButtonUp = this.onButtonUp.bind(this);
     if (this.data.startEvents.length && this.data.endEvents.length) {
+
       for (i = 0; i < this.data.startEvents.length; i++) {
         el.addEventListener(this.data.startEvents[i], this.onButtonDown);
       }

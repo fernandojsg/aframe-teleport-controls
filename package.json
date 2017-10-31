@@ -1,6 +1,6 @@
 {
   "name": "aframe-teleport-controls",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A-Frame teleport controls component",
   "author": "Fernando Serrano <fernandojsg@gmail.com> (http://fernandojsg.com/)",
   "license": "MIT",
