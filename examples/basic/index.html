@@ -3,7 +3,8 @@
   <head>
     <script src="../build.js"></script>
     <script src="../common/shaders/skyGradient.js"></script>
-    <script src="https://unpkg.com/aframe-input-mapping-component@0.1.0/dist/aframe-input-mapping-component.js"></script>
+    <script src="https://unpkg.com/aframe-input-mapping-component@0.1.0/dist/aframe-input-mapping-component.min.js"></script>
+    <script src="../common/mappings.js"></script>
   </head>
   <body style="background-color: #000">
     <a-scene>
@@ -30,28 +31,5 @@
       </a-entity>
       </a-entity>
     </a-scene>
-    <script>
-    var mappings = {
-        mappings: {
-          default: {
-            common: {
-              trackpaddown: 'teleportstart',
-              trackpadup: 'teleportend'
-            },
-            'oculus-touch-controls': {
-              xbuttondown: 'teleportstart',
-              xbuttonup: 'teleportend',
-              abuttondown: 'teleportstart',
-              abuttonup: 'teleportend'
-            },
-            keyboard: {
-              't_down': 'teleportstart',
-              't_up': 'teleportend'
-            }
-          }
-        }
-      };
-      AFRAME.registerInputMappings(mappings);
-    </script>
   </body>
 </html>
