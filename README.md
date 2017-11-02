@@ -94,3 +94,9 @@ Then register and use.
 ```js
 require('aframe-teleport-controls');
 ```
+
+### Events
+
+| Event      | Properties of `event.detail`             | Description                      |
+|------------|------------------------------------------|----------------------------------|
+| `teleported` | `oldPosition`, `newPosition`, `hitPoint` | Fires when teleportation begins. |
