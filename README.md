@@ -99,4 +99,4 @@ require('aframe-teleport-controls');
 
 | Event      | Properties of `event.detail`             | Description                      |
 |------------|------------------------------------------|----------------------------------|
-| `teleport` | `oldPosition`, `newPosition`, `hitPoint` | Fires when teleportation begins. |
+| `teleported` | `oldPosition`, `newPosition`, `hitPoint` | Fires when teleportation begins. |
