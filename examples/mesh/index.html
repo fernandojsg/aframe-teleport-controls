@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
+    <script src="../../dist/aframe-teleport-controls.min.js"></script>
+    <script src="../common/shaders/skyGradient.js"></script>
+    <script src="https://unpkg.com/aframe-input-mapping-component/dist/aframe-input-mapping-component.min.js"></script>
+    <script src="../common/mappings.js"></script>
+  </head>
+  <body style="background-color: #000">
+    <a-scene>
+      <!-- lights -->
+      <a-entity position="-1 4 0" light="color: #f4f4f4; intensity: 0.6; type: point"></a-entity>
+      <a-entity position="10 3 3" light="color: #47c9ff; intensity: 0.3; type: hemisphere"></a-entity>
+      <!-- scene geometry -->
+      <a-entity id="sky"
+                geometry="primitive: sphere; radius: 65;"
+                material="shader: skyGradient; colorTop: #353449; colorBottom: #BC483E; side: back"></a-entity>
+      <a-entity id="floor"
+                rotation="-90 0 0"
+                position="0 -5 0"
+                geometry="primitive: plane; width: 100; height: 100"
+                material="src: url(../common/pavement.jpg); repeat: 40 40">
+      </a-entity>
+      <a-entity
+                geometry="primitive: sphere; radius: 1;"
+                position= "-5 0 -5"
+                material="color: #f00">
+      </a-entity>
+      <a-entity
+                geometry="primitive: box; width: 6; height: 1.5"
+                position= "-3 0 6"
+                material="color: #ff0">
+      </a-entity>
+      <a-entity
+                geometry="primitive: box; width: 1.5; height: 1.5; depth: 1.5"
+                position= "6.5 0 5";
+                material="color: #00f">
+      </a-entity>
+      <a-entity id="floorgeometry" position="0 0.15 0"
+      material="src: url(asphalt.jpg); repeat: 10 10; roughness: 0.8" obj-model="obj: url(floor.obj)">
+      </a-entity>
+
+      <a-entity id="cameraRig">
+        <a-entity camera wasd-controls look-controls></a-entity>
+        <!-- hand controls -->
+        <a-entity id="left-hand"
+                  teleport-controls="collisionEntities: #floorgeometry; cameraRig: #cameraRig; startEvents: teleportstart; endEvents: teleportend"
+                  vive-controls="hand: left"
+                  oculus-touch-controls="hand: left"
+                  microsoft-motion-controls="hand: left"
+                  daydream-controls="left" gearvr-controls="left">
+        </a-entity>
+        <a-entity id="right-hand"
+                  teleport-controls="collisionEntities: #floorgeometry; cameraRig: #cameraRig; startEvents: teleportstart; endEvents: teleportend"
+                  vive-controls="hand: right"
+                  microsoft-motion-controls="hand: right"
+                  oculus-touch-controls="hand: right"
+                  daydream-controls="right" gearvr-controls="right">
+        </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

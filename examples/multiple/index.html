@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
+    <script src="../../dist/aframe-teleport-controls.min.js"></script>
+    <script src="../common/shaders/skyGradient.js"></script>
+    <script src="https://rawgit.com/ngokevin/aframe-motion-capture/343f99/dist/aframe-motion-capture.min.js"></script>
+    <script src="https://unpkg.com/aframe-input-mapping-component/dist/aframe-input-mapping-component.min.js"></script>
+    <script src="../common/mappings.js"></script>
+  </head>
+  <body style="background-color: #000">
+    <script>
+      AFRAME.registerComponent('meshes', {
+        init: function () {
+          for (let i = 0; i < 50; i++) {
+            let el = document.createElement('a-entity');
+            el.setAttribute('mixin', i % 2 === 0 ? 'box' : 'sphere');
+            el.setAttribute('position', {x: 0, y: i, z: -1.4 * i});
+            this.el.appendChild(el);
+          }
+        }
+      });
+
+      AFRAME.registerComponent('randomcolor', {
+        init: function () {
+          this.el.setAttribute('material', 'color', getRandomColor());
+
+          function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++ ) {
+              color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+          }
+        }
+      });
+    </script>
+
+    <a-scene avatar-recorder>
+      <a-assets>
+        <a-mixin id="box" geometry="primitive: box; width: 2; height: 0.5; depth: 0.5" randomcolor></a-mixin>
+        <a-mixin id="sphere" geometry="primitive: sphere; radius: 0.5" randomcolor></a-mixin>
+      </a-assets>
+
+      <!-- scene geometry -->
+      <a-entity id="sky"
+                geometry="primitive: sphere; radius: 65;"
+                material="shader: skyGradient; colorTop: #aaa; colorBottom: #fff; side: back"></a-entity>
+      <a-entity id="floor"
+                rotation="-90 0 0"
+                geometry="primitive: plane; width: 100; height: 100"
+                material="src: url(floor.jpg); repeat: 80 80">
+      </a-entity>
+
+      <a-entity meshes></a-entity>
+
+      <!-- hand controls -->
+      <a-mixin id="teleport" teleport-controls="type: parabolic; cameraRig: #cameraRig; collisionEntities: [mixin='box'], [mixin='sphere']"></a-mixin>
+      <a-entity id="cameraRig">
+        <a-entity camera wasd-controls look-controls></a-entity>
+        <!-- hand controls -->
+        <a-entity id="leftHand" mixin="teleport" vive-controls="hand: left"></a-entity>
+        <a-entity id="rightHand" mixin="teleport" vive-controls="hand: right"></a-entity>
+      </a-entity>
+
+      <a-entity id="rightHand" mixin="teleport" vive-controls="hand: right"></a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

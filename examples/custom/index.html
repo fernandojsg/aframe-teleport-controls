@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/0.7.1/aframe.min.js"></script>
+    <script src="../../dist/aframe-teleport-controls.min.js"></script>
+    <script src="../common/shaders/skyGradient.js"></script>
+    <script src="https://unpkg.com/aframe-input-mapping-component/dist/aframe-input-mapping-component.min.js"></script>
+    <script src="../common/mappings.js"></script>
+  </head>
+  <body style="background-color: #000">
+    <a-scene>
+      <!-- lights -->
+      <a-entity position="-1 4 0" light="color: #f4f4f4; intensity: 0.6; type: point"></a-entity>
+      <a-entity position="10 3 3" light="color: #47c9ff; intensity: 0.3; type: hemisphere"></a-entity>
+      <!-- scene geometry -->
+      <a-entity id="sky"
+                geometry="primitive: sphere; radius: 65;"
+                material="shader: skyGradient; colorTop: #353449; colorBottom: #BC483E; side: back"></a-entity>
+      <a-entity id="floorLeft"
+                position="-5 0 0"
+                geometry="primitive: box; width: 10; depth: 10; height: 0.1"
+                material="src: url(../common/pavement.jpg); repeat: 40 40; color: #ff0000">
+      </a-entity>
+      <a-entity id="floorRight"
+                position="5 0 0"
+                geometry="primitive: box; width: 10; depth: 10; height: 0.1"
+                material="src: url(../common/pavement.jpg); repeat: 40 40; color: #0000ff">
+      </a-entity>
+      <a-entity id="hintEntity"
+            geometry="primitive: sphere; radius: 0.125"
+            material="color: #ff9999;">
+      </a-entity>
+
+      <a-entity id="cameraRig">
+        <a-sphere scale="0.1 0.1 0.1"></a-sphere>
+        <a-entity id="head" camera wasd-controls look-controls></a-entity>
+        <!-- hand controls -->
+        <a-entity id="left-hand"
+                  teleport-controls="collisionEntities: #floorLeft;
+                  startEvents: teleportstart; endEvents: teleportend;
+                  curveHitColor: #ff9999;
+                  curveMissColor: #ff0000;
+                  cameraRig: #cameraRig;
+                  maxLength: 30;
+                  type: line;
+                  hitEntity: #hintEntity;"
+                  vive-controls="hand: left"
+                  oculus-touch-controls="hand: left"
+                  microsoft-motion-controls="hand: left"
+                  daydream-controls="left" gearvr-controls="left">
+        </a-entity>
+        <a-entity id="right-hand"
+                  teleport-controls="collisionEntities: #floorRight;
+                  startEvents: teleportstart; endEvents: teleportend;
+                  button: trigger;
+                  cameraRig: #cameraRig;
+                  teleportOrigin: #head;
+                  curveHitColor: #9999ff;
+                  curveMissColor: #ff0000;
+                  curveNumberPoints: 50;
+                  curveLineWidth: 0.015;
+                  curveShootingSpeed: 4"
+              vive-controls="hand: right"
+              microsoft-motion-controls="hand: right"
+              oculus-touch-controls="hand: right"
+              daydream-controls="right" gearvr-controls="right">
+        </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
