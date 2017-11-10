@@ -243,7 +243,7 @@ AFRAME.registerComponent('teleport-controls', {
   onButtonUp: (function () {
     const teleportOriginWorldPosition = new THREE.Vector3();
     const newRigLocalPosition = new THREE.Vector3();
-    const newHandPosition = new THREE.Vector3();
+    const newHandPosition = [new THREE.Vector3(), new THREE.Vector3()]; // Left and right
     const handPosition = new THREE.Vector3();
 
     return function (evt) {
@@ -289,8 +289,8 @@ AFRAME.registerComponent('teleport-controls', {
 
           // diff = rigWorldPosition - handPosition
           // newPos = newRigWorldPosition - diff
-          newHandPosition.copy(this.newRigWorldPosition).sub(this.rigWorldPosition).add(handPosition);
-          hands[i].setAttribute('position', newHandPosition);
+          newHandPosition[i].copy(this.newRigWorldPosition).sub(this.rigWorldPosition).add(handPosition);
+          hands[i].setAttribute('position', newHandPosition[i]);
         }
       }
 
