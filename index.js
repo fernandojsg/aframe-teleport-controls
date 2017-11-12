@@ -35,6 +35,7 @@ AFRAME.registerComponent('teleport-controls', {
     hitCylinderColor: {type: 'color', default: '#99ff99'},
     hitCylinderRadius: {default: 0.25, min: 0},
     hitCylinderHeight: {default: 0.3, min: 0},
+    interval: {default: 0},
     maxLength: {default: 10, min: 0, if: {type: ['line']}},
     curveNumberPoints: {default: 30, min: 2, if: {type: ['parabolic']}},
     curveLineWidth: {default: 0.025},
@@ -64,6 +65,7 @@ AFRAME.registerComponent('teleport-controls', {
     };
 
     this.hit = false;
+    this.prevCheckTime = undefined;
     this.prevHitHeight = 0;
     this.referenceNormal = new THREE.Vector3();
     this.curveMissColor = new THREE.Color();
@@ -71,6 +73,7 @@ AFRAME.registerComponent('teleport-controls', {
     this.raycaster = new THREE.Raycaster();
 
     this.defaultPlane = createDefaultPlane(this.data.defaultPlaneSize);
+    this.defaultCollisionMeshes = [this.defaultPlane];
 
     teleportEntity = this.teleportEntity = document.createElement('a-entity');
     teleportEntity.classList.add('teleportRay');
@@ -156,6 +159,11 @@ AFRAME.registerComponent('teleport-controls', {
 
     return function (time, delta) {
       if (!this.active) { return; }
+
+      // Only check for intersection if interval time has passed.
+      if (this.prevCheckTime && (time - this.prevCheckTime < this.data.interval)) { return; }
+      // Update check time.
+      this.prevCheckTime = time;
 
       var matrixWorld = this.obj.matrixWorld;
       matrixWorld.decompose(translation, quaternion, scale);
@@ -309,10 +317,15 @@ AFRAME.registerComponent('teleport-controls', {
     // @todo We should add a property to define if the collisionEntity is dynamic or static
     // If static we should do the map just once, otherwise we're recreating the array in every
     // loop when aiming.
-    var meshes = this.collisionEntities.map(function (entity) {
-      return entity.getObject3D('mesh');
-    }).filter(function (n) { return n; });
-    meshes = meshes.length ? meshes : [this.defaultPlane];
+    var meshes;
+    if (!this.data.collisionEntities) {
+      meshes = this.defaultCollisionMeshes;
+    } else {
+      meshes = this.collisionEntities.map(function (entity) {
+        return entity.getObject3D('mesh');
+      }).filter(function (n) { return n; });
+      meshes = meshes.length ? meshes : this.defaultCollisionMeshes;
+    }
 
     var intersects = this.raycaster.intersectObjects(meshes, true);
     if (intersects.length > 0 && !this.hit &&
