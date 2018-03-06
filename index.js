@@ -82,20 +82,37 @@ AFRAME.registerComponent('teleport-controls', {
 
     this.onButtonDown = this.onButtonDown.bind(this);
     this.onButtonUp = this.onButtonUp.bind(this);
-    if (this.data.startEvents.length && this.data.endEvents.length) {
 
+    this.eventBindings = [];
+    if (this.data.startEvents.length && this.data.endEvents.length) {
       for (i = 0; i < this.data.startEvents.length; i++) {
-        el.addEventListener(this.data.startEvents[i], this.onButtonDown);
+        this.eventBindings.push([this.data.startEvents[i], this.onButtonDown]);
       }
       for (i = 0; i < this.data.endEvents.length; i++) {
-        el.addEventListener(this.data.endEvents[i], this.onButtonUp);
+        this.eventBindings.push([this.data.endEvents[i], this.onButtonUp]);
       }
     } else {
-      el.addEventListener(data.button + 'down', this.onButtonDown);
-      el.addEventListener(data.button + 'up', this.onButtonUp);
+      this.eventBindings.push([data.button + 'down', this.onButtonDown]);
+      this.eventBindings.push([data.button + 'up', this.onButtonUp]);
     }
 
     this.queryCollisionEntities();
+  },
+
+  play: function() {
+    for (var i = 0; i < this.eventBindings.length; i++) {
+      this.el.addEventListener(this.eventBindings[i][0], this.eventBindings[i][1]);
+    }
+    if(this.childAttachHandler) { el.sceneEl.addEventListener("child-attached", this.childAttachHandler); } 
+    if(this.childDetachHandler) { el.sceneEl.addEventListener("child-detached", this.childDetachHandler); } 
+  },
+
+  pause: function() {
+    for (var i = 0; i < this.eventBindings.length; i++) {
+      this.el.removeEventListener(this.eventBindings[i][0], this.eventBindings[i][1]);
+    }
+    if(this.childAttachHandler) { el.sceneEl.removeEventListener("child-attached", this.childAttachHandler); } 
+    if(this.childDetachHandler) { el.sceneEl.removeEventListener("child-detached", this.childDetachHandler); } 
   },
 
   update: function (oldData) {
@@ -132,15 +149,10 @@ AFRAME.registerComponent('teleport-controls', {
   },
 
   remove: function () {
-    var el = this.el;
     var hitEntity = this.hitEntity;
     var teleportEntity = this.teleportEntity;
-
     if (hitEntity) { hitEntity.parentNode.removeChild(hitEntity); }
     if (teleportEntity) { teleportEntity.parentNode.removeChild(teleportEntity); }
-
-    el.sceneEl.removeEventListener('child-attached', this.childAttachHandler);
-    el.sceneEl.removeEventListener('child-detached', this.childDetachHandler);
   },
 
   tick: (function () {
@@ -224,6 +236,9 @@ AFRAME.registerComponent('teleport-controls', {
     this.collisionEntities = collisionEntities;
 
     // Update entity list on attach.
+    if(this.childAttachHandler) {
+      el.sceneEl.removeEventListener("child-attached", this.childAttachHandler);
+    } 
     this.childAttachHandler = function childAttachHandler (evt) {
       if (!evt.detail.el.matches(data.collisionEntities)) { return; }
       collisionEntities.push(evt.detail.el);
@@ -231,6 +246,9 @@ AFRAME.registerComponent('teleport-controls', {
     el.sceneEl.addEventListener('child-attached', this.childAttachHandler);
 
     // Update entity list on detach.
+    if(this.childDetachHandler) {
+      el.sceneEl.removeEventListener("child-detached", this.childDetachHandler);
+    } 
     this.childDetachHandler = function childDetachHandler (evt) {
       var index;
       if (!evt.detail.el.matches(data.collisionEntities)) { return; }

@@ -81,6 +81,7 @@
 	    hitCylinderColor: {type: 'color', default: '#99ff99'},
 	    hitCylinderRadius: {default: 0.25, min: 0},
 	    hitCylinderHeight: {default: 0.3, min: 0},
+	    interval: {default: 0},
 	    maxLength: {default: 10, min: 0, if: {type: ['line']}},
 	    curveNumberPoints: {default: 30, min: 2, if: {type: ['parabolic']}},
 	    curveLineWidth: {default: 0.025},
@@ -110,6 +111,7 @@
 	    };
 
 	    this.hit = false;
+	    this.prevCheckTime = undefined;
 	    this.prevHitHeight = 0;
 	    this.referenceNormal = new THREE.Vector3();
 	    this.curveMissColor = new THREE.Color();
@@ -117,6 +119,7 @@
 	    this.raycaster = new THREE.Raycaster();
 
 	    this.defaultPlane = createDefaultPlane(this.data.defaultPlaneSize);
+	    this.defaultCollisionMeshes = [this.defaultPlane];
 
 	    teleportEntity = this.teleportEntity = document.createElement('a-entity');
 	    teleportEntity.classList.add('teleportRay');
@@ -125,20 +128,37 @@
 
 	    this.onButtonDown = this.onButtonDown.bind(this);
 	    this.onButtonUp = this.onButtonUp.bind(this);
-	    if (this.data.startEvents.length && this.data.endEvents.length) {
 
+	    this.eventBindings = [];
+	    if (this.data.startEvents.length && this.data.endEvents.length) {
 	      for (i = 0; i < this.data.startEvents.length; i++) {
-	        el.addEventListener(this.data.startEvents[i], this.onButtonDown);
+	        this.eventBindings.push([this.data.startEvents[i], this.onButtonDown]);
 	      }
 	      for (i = 0; i < this.data.endEvents.length; i++) {
-	        el.addEventListener(this.data.endEvents[i], this.onButtonUp);
+	        this.eventBindings.push([this.data.endEvents[i], this.onButtonUp]);
 	      }
 	    } else {
-	      el.addEventListener(data.button + 'down', this.onButtonDown);
-	      el.addEventListener(data.button + 'up', this.onButtonUp);
+	      this.eventBindings.push([data.button + 'down', this.onButtonDown]);
+	      this.eventBindings.push([data.button + 'up', this.onButtonUp]);
 	    }
 
 	    this.queryCollisionEntities();
+	  },
+
+	  play: function() {
+	    for (var i = 0; i < this.eventBindings.length; i++) {
+	      this.el.addEventListener(this.eventBindings[i][0], this.eventBindings[i][1]);
+	    }
+	    if(this.childAttachHandler) { el.sceneEl.addEventListener("child-attached", this.childAttachHandler); } 
+	    if(this.childDetachHandler) { el.sceneEl.addEventListener("child-detached", this.childDetachHandler); } 
+	  },
+
+	  pause: function() {
+	    for (var i = 0; i < this.eventBindings.length; i++) {
+	      this.el.removeEventListener(this.eventBindings[i][0], this.eventBindings[i][1]);
+	    }
+	    if(this.childAttachHandler) { el.sceneEl.removeEventListener("child-attached", this.childAttachHandler); } 
+	    if(this.childDetachHandler) { el.sceneEl.removeEventListener("child-detached", this.childDetachHandler); } 
 	  },
 
 	  update: function (oldData) {
@@ -175,15 +195,10 @@
 	  },
 
 	  remove: function () {
-	    var el = this.el;
 	    var hitEntity = this.hitEntity;
 	    var teleportEntity = this.teleportEntity;
-
 	    if (hitEntity) { hitEntity.parentNode.removeChild(hitEntity); }
 	    if (teleportEntity) { teleportEntity.parentNode.removeChild(teleportEntity); }
-
-	    el.sceneEl.removeEventListener('child-attached', this.childAttachHandler);
-	    el.sceneEl.removeEventListener('child-detached', this.childDetachHandler);
 	  },
 
 	  tick: (function () {
@@ -202,6 +217,11 @@
 
 	    return function (time, delta) {
 	      if (!this.active) { return; }
+
+	      // Only check for intersection if interval time has passed.
+	      if (this.prevCheckTime && (time - this.prevCheckTime < this.data.interval)) { return; }
+	      // Update check time.
+	      this.prevCheckTime = time;
 
 	      var matrixWorld = this.obj.matrixWorld;
 	      matrixWorld.decompose(translation, quaternion, scale);
@@ -262,6 +282,9 @@
 	    this.collisionEntities = collisionEntities;
 
 	    // Update entity list on attach.
+	    if(this.childAttachHandler) {
+	      el.sceneEl.removeEventListener("child-attached", this.childAttachHandler);
+	    } 
 	    this.childAttachHandler = function childAttachHandler (evt) {
 	      if (!evt.detail.el.matches(data.collisionEntities)) { return; }
 	      collisionEntities.push(evt.detail.el);
@@ -269,6 +292,9 @@
 	    el.sceneEl.addEventListener('child-attached', this.childAttachHandler);
 
 	    // Update entity list on detach.
+	    if(this.childDetachHandler) {
+	      el.sceneEl.removeEventListener("child-detached", this.childDetachHandler);
+	    } 
 	    this.childDetachHandler = function childDetachHandler (evt) {
 	      var index;
 	      if (!evt.detail.el.matches(data.collisionEntities)) { return; }
@@ -355,10 +381,15 @@
 	    // @todo We should add a property to define if the collisionEntity is dynamic or static
 	    // If static we should do the map just once, otherwise we're recreating the array in every
 	    // loop when aiming.
-	    var meshes = this.collisionEntities.map(function (entity) {
-	      return entity.getObject3D('mesh');
-	    }).filter(function (n) { return n; });
-	    meshes = meshes.length ? meshes : [this.defaultPlane];
+	    var meshes;
+	    if (!this.data.collisionEntities) {
+	      meshes = this.defaultCollisionMeshes;
+	    } else {
+	      meshes = this.collisionEntities.map(function (entity) {
+	        return entity.getObject3D('mesh');
+	      }).filter(function (n) { return n; });
+	      meshes = meshes.length ? meshes : this.defaultCollisionMeshes;
+	    }
 
 	    var intersects = this.raycaster.intersectObjects(meshes, true);
 	    if (intersects.length > 0 && !this.hit &&
