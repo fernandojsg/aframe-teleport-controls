@@ -81,6 +81,7 @@
 	    hitCylinderColor: {type: 'color', default: '#99ff99'},
 	    hitCylinderRadius: {default: 0.25, min: 0},
 	    hitCylinderHeight: {default: 0.3, min: 0},
+	    interval: {default: 0},
 	    maxLength: {default: 10, min: 0, if: {type: ['line']}},
 	    curveNumberPoints: {default: 30, min: 2, if: {type: ['parabolic']}},
 	    curveLineWidth: {default: 0.025},
@@ -110,6 +111,7 @@
 	    };
 
 	    this.hit = false;
+	    this.prevCheckTime = undefined;
 	    this.prevHitHeight = 0;
 	    this.referenceNormal = new THREE.Vector3();
 	    this.curveMissColor = new THREE.Color();
@@ -117,10 +119,11 @@
 	    this.raycaster = new THREE.Raycaster();
 
 	    this.defaultPlane = createDefaultPlane(this.data.defaultPlaneSize);
+	    this.defaultCollisionMeshes = [this.defaultPlane];
 
 	    teleportEntity = this.teleportEntity = document.createElement('a-entity');
 	    teleportEntity.classList.add('teleportRay');
-	    teleportEntity.setAttribute('visible', false);
+	    teleportEntity.object3D.visible = false;
 	    el.sceneEl.appendChild(this.teleportEntity);
 
 	    this.onButtonDown = this.onButtonDown.bind(this);
@@ -169,7 +172,7 @@
 	      this.hitEntity = createHitEntity(data);
 	      this.el.sceneEl.appendChild(this.hitEntity);
 	    }
-	    this.hitEntity.setAttribute('visible', false);
+	    this.hitEntity.object3D.visible = false;
 
 	    if ('collisionEntities' in diff) { this.queryCollisionEntities(); }
 	  },
@@ -203,6 +206,11 @@
 	    return function (time, delta) {
 	      if (!this.active) { return; }
 
+	      // Only check for intersection if interval time has passed.
+	      if (this.prevCheckTime && (time - this.prevCheckTime < this.data.interval)) { return; }
+	      // Update check time.
+	      this.prevCheckTime = time;
+
 	      var matrixWorld = this.obj.matrixWorld;
 	      matrixWorld.decompose(translation, quaternion, scale);
 
@@ -214,9 +222,9 @@
 	      last.copy(p0);
 
 	      // Set default status as non-hit
-	      this.teleportEntity.setAttribute('visible', true);
+	      this.teleportEntity.object3D.visible = true;
 	      this.line.material.color.set(this.curveMissColor);
-	      this.hitEntity.setAttribute('visible', false);
+	      this.hitEntity.object3D.visible = false;
 	      this.hit = false;
 
 	      if (this.data.type === 'parabolic') {
@@ -297,8 +305,8 @@
 
 	      // Hide the hit point and the curve
 	      this.active = false;
-	      this.hitEntity.setAttribute('visible', false);
-	      this.teleportEntity.setAttribute('visible', false);
+	      this.hitEntity.object3D.visible = false;
+	      this.teleportEntity.object3D.visible = false;
 
 	      if (!this.hit) {
 	        // Button released but not hit point
@@ -325,7 +333,7 @@
 	      if (rig.object3D.parent) {
 	        rig.object3D.parent.worldToLocal(newRigLocalPosition);
 	      }
-	      rig.setAttribute('position', newRigLocalPosition);
+	      rig.object3D.position.copy(newRigLocalPosition);
 
 	      // If a rig was not explicitly declared, look for hands and mvoe them proportionally as well
 	      if (!this.data.cameraRig) {
@@ -336,7 +344,7 @@
 	          // diff = rigWorldPosition - handPosition
 	          // newPos = newRigWorldPosition - diff
 	          newHandPosition[i].copy(this.newRigWorldPosition).sub(this.rigWorldPosition).add(handPosition);
-	          hands[i].setAttribute('position', newHandPosition[i]);
+	          hands[i].object3D.position.copy(newHandPosition[i]);
 	        }
 	      }
 
@@ -355,10 +363,15 @@
 	    // @todo We should add a property to define if the collisionEntity is dynamic or static
 	    // If static we should do the map just once, otherwise we're recreating the array in every
 	    // loop when aiming.
-	    var meshes = this.collisionEntities.map(function (entity) {
-	      return entity.getObject3D('mesh');
-	    }).filter(function (n) { return n; });
-	    meshes = meshes.length ? meshes : [this.defaultPlane];
+	    var meshes;
+	    if (!this.data.collisionEntities) {
+	      meshes = this.defaultCollisionMeshes;
+	    } else {
+	      meshes = this.collisionEntities.map(function (entity) {
+	        return entity.getObject3D('mesh');
+	      }).filter(function (n) { return n; });
+	      meshes = meshes.length ? meshes : this.defaultCollisionMeshes;
+	    }
 
 	    var intersects = this.raycaster.intersectObjects(meshes, true);
 	    if (intersects.length > 0 && !this.hit &&
@@ -366,8 +379,8 @@
 	      var point = intersects[0].point;
 
 	      this.line.material.color.set(this.curveHitColor);
-	      this.hitEntity.setAttribute('position', point);
-	      this.hitEntity.setAttribute('visible', true);
+	      this.hitEntity.object3D.position.copy(point);
+	      this.hitEntity.object3D.visible = true;
 
 	      this.hit = true;
 	      this.hitPoint.copy(intersects[0].point);
