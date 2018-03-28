@@ -29,7 +29,9 @@ AFRAME.registerComponent('teleport-controls', {
     startEvents: {type: 'array'},
     endEvents: {type: 'array'},
     collisionEntities: {default: ''},
+    checkCollisionChildren: {default: true},
     hitEntity: {type: 'selector'},
+    hitEntityAlignNormal: {default: true},
     cameraRig: {type: 'selector'},
     teleportOrigin: {type: 'selector'},
     hitCylinderColor: {type: 'color', default: '#99ff99'},
@@ -63,6 +65,8 @@ AFRAME.registerComponent('teleport-controls', {
       newPosition: this.newRigWorldPosition,
       hitPoint: this.hitPoint
     };
+    this.intersections = [];
+    this.meshes = [];
 
     this.hit = false;
     this.prevCheckTime = undefined;
@@ -95,7 +99,7 @@ AFRAME.registerComponent('teleport-controls', {
       el.addEventListener(data.button + 'up', this.onButtonUp);
     }
 
-    this.queryCollisionEntities();
+    this.refreshMeshes();
   },
 
   update: function (oldData) {
@@ -128,7 +132,7 @@ AFRAME.registerComponent('teleport-controls', {
     }
     this.hitEntity.object3D.visible = false;
 
-    if ('collisionEntities' in diff) { this.queryCollisionEntities(); }
+    if ('collisionEntities' in diff) { this.refreshMeshes(); }
   },
 
   remove: function () {
@@ -210,10 +214,12 @@ AFRAME.registerComponent('teleport-controls', {
    * Run `querySelectorAll` for `collisionEntities` and maintain it with `child-attached`
    * and `child-detached` events.
    */
-  queryCollisionEntities: function () {
+  refreshMeshes: function () {
     var collisionEntities;
     var data = this.data;
     var el = this.el;
+    var i;
+    var meshes;
 
     if (!data.collisionEntities) {
       this.collisionEntities = [];
@@ -224,21 +230,44 @@ AFRAME.registerComponent('teleport-controls', {
     this.collisionEntities = collisionEntities;
 
     // Update entity list on attach.
-    this.childAttachHandler = function childAttachHandler (evt) {
-      if (!evt.detail.el.matches(data.collisionEntities)) { return; }
-      collisionEntities.push(evt.detail.el);
-    };
-    el.sceneEl.addEventListener('child-attached', this.childAttachHandler);
+    if (this.data.checkCollisionChildren) {
+      el.sceneEl.removeEventListener('child-attached', this.childAttachHandler);
+      this.childAttachHandler = function childAttachHandler (evt) {
+        if (!evt.detail.el.matches(data.collisionEntities)) { return; }
+        collisionEntities.push(evt.detail.el);
+      };
+      el.sceneEl.addEventListener('child-attached', this.childAttachHandler);
 
-    // Update entity list on detach.
-    this.childDetachHandler = function childDetachHandler (evt) {
-      var index;
-      if (!evt.detail.el.matches(data.collisionEntities)) { return; }
-      index = collisionEntities.indexOf(evt.detail.el);
-      if (index === -1) { return; }
-      collisionEntities.splice(index, 1);
-    };
-    el.sceneEl.addEventListener('child-detached', this.childDetachHandler);
+      // Update entity list on detach.
+      el.sceneEl.removeEventListener('child-detached', this.childDetachHandler);
+      this.childDetachHandler = function childDetachHandler (evt) {
+        var index;
+        if (!evt.detail.el.matches(data.collisionEntities)) { return; }
+        index = collisionEntities.indexOf(evt.detail.el);
+        if (index === -1) { return; }
+        collisionEntities.splice(index, 1);
+      };
+      el.sceneEl.addEventListener('child-detached', this.childDetachHandler);
+    }
+
+    if (this.data.collisionEntities) {
+      // Get meshes.
+      var meshes = this.meshes = [];
+      for (i = 0; i < this.collisionEntities.length; i++) {
+        var mesh = this.collisionEntities[i].getObject3D('mesh');
+        if (mesh) {
+          this.meshes.push(mesh);
+        } else {
+          // Listen for new meshes.
+          this.collisionEntities[i].addEventListener('object3dset', function (evt) {
+            if (evt.target !== this || evt.detail.type !== 'mesh') { return; }
+            meshes.push(evt.detail.object);
+          });
+        }
+      }
+    } else {
+      this.meshes = this.defaultCollisionMeshes;
+    }
   },
 
   onButtonDown: function () {
@@ -313,42 +342,45 @@ AFRAME.registerComponent('teleport-controls', {
    * @param {number} Next line fragment point index.
    * @returns {boolean} true if there's an intersection.
    */
-  checkMeshCollisions: function (i, next) {
-    // @todo We should add a property to define if the collisionEntity is dynamic or static
-    // If static we should do the map just once, otherwise we're recreating the array in every
-    // loop when aiming.
-    var meshes;
-    if (!this.data.collisionEntities) {
-      meshes = this.defaultCollisionMeshes;
-    } else {
-      meshes = this.collisionEntities.map(function (entity) {
-        return entity.getObject3D('mesh');
-      }).filter(function (n) { return n; });
-      meshes = meshes.length ? meshes : this.defaultCollisionMeshes;
-    }
+  checkMeshCollisions: (function () {
+    var lookAtVec3 = new THREE.Vector3();
 
-    var intersects = this.raycaster.intersectObjects(meshes, true);
-    if (intersects.length > 0 && !this.hit &&
-        this.isValidNormalsAngle(intersects[0].face.normal)) {
-      var point = intersects[0].point;
+    return function (i, next) {
+      var i;
+      var intersects = this.intersections;
 
-      this.line.material.color.set(this.curveHitColor);
-      this.hitEntity.object3D.position.copy(point);
-      this.hitEntity.object3D.visible = true;
+      intersects.length = 0;
+      this.raycaster.intersectObjects(this.meshes, true, intersects);
 
-      this.hit = true;
-      this.hitPoint.copy(intersects[0].point);
+      if (intersects.length > 0 && !this.hit &&
+          this.isValidNormalsAngle(intersects[0].face.normal)) {
+        var point = intersects[0].point;
 
-      // If hit, just fill the rest of the points with the hit point and break the loop
-      for (var j = i; j < this.line.numPoints; j++) {
-        this.line.setPoint(j, this.hitPoint);
+        this.line.material.color.set(this.curveHitColor);
+        this.hitEntity.object3D.position.copy(point);
+        this.hitEntity.object3D.visible = true;
+
+        this.hit = true;
+        this.hitPoint.copy(intersects[0].point);
+
+        // Align hit cylinder to intersection normal.
+        if (this.data.hitEntityAlignNormal) {
+          lookAtVec3.copy(intersects[0].point).add(intersects[0].face.normal);
+          intersects[0].object.localToWorld(lookAtVec3);
+          this.hitEntity.object3D.lookAt(lookAtVec3);
+        }
+
+        // If hit, just fill the rest of the points with the hit point and break the loop
+        for (var j = i; j < this.line.numPoints; j++) {
+          this.line.setPoint(j, this.hitPoint);
+        }
+        return true;
+      } else {
+        this.line.setPoint(i, next);
+        return false;
       }
-      return true;
-    } else {
-      this.line.setPoint(i, next);
-      return false;
-    }
-  },
+    };
+  })(),
 
   isValidNormalsAngle: function (collisionNormal) {
     var angleNormals = this.referenceNormal.angleTo(collisionNormal);
@@ -382,7 +414,6 @@ function createHitEntity (data) {
     radius: data.hitCylinderRadius,
     radiusTubular: 0.01
   });
-  torus.setAttribute('rotation', {x: 90, y: 0, z: 0});
   torus.setAttribute('material', {
     shader: 'flat',
     color: data.hitCylinderColor,
@@ -409,6 +440,7 @@ function createHitEntity (data) {
     transparent: true,
     depthTest: false
   });
+  setTimeout(() => { cylinder.getObject3D('mesh').rotation.x += Math.PI / 2; });
   hitEntity.appendChild(cylinder);
 
   return hitEntity;
