@@ -440,7 +440,9 @@ function createHitEntity (data) {
     transparent: true,
     depthTest: false
   });
-  setTimeout(() => { cylinder.getObject3D('mesh').rotation.x += Math.PI / 2; });
+  setTimeout(function () {
+    cylinder.getObject3D('mesh').rotation.x += Math.PI / 2;
+  });
   hitEntity.appendChild(cylinder);
 
   return hitEntity;
