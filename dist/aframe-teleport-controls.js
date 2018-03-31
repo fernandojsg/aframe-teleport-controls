@@ -452,6 +452,7 @@
 	  // Parent.
 	  hitEntity = document.createElement('a-entity');
 	  hitEntity.className = 'hitEntity';
+	  hitEntity.setAttribute('visible', false);
 
 	  // Torus.
 	  torus = document.createElement('a-entity');
