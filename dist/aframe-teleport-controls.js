@@ -318,6 +318,7 @@
 
 	  onButtonDown: function () {
 	    this.active = true;
+	    this.el.emit('teleportstart');
 	  },
 
 	  /**
