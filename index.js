@@ -163,29 +163,19 @@ AFRAME.registerComponent('teleport-controls', {
     var shootAngle = new THREE.Vector3();
     var lastNext = new THREE.Vector3();
     var auxDirection = new THREE.Vector3();
+    var timeSinceDrawStart = 0;
 
     return function (time, delta) {
       if (!this.active) { return; }
-      if (this.redrawLine && this.data.drawIncrementally){
+      const totalTime = 6000;
+      if (this.data.drawIncrementally && this.redrawLine){
         this.redrawLine = false;
-        // Draw the line over some amount of time.
-        this.timeSinceStart = 0;
-        if (this.asyncActivePointManipulator){
-          window.clearInterval(this.asyncActivePointManipulator);
-        }
-        const totalTime = 600;
-        const stepTime = 50;
-        this.asyncActivePointManipulator = window.setInterval(()=>{
-          if (this.timeSinceStart > totalTime){
-            window.clearInterval(this.asyncActivePointManipulator);
-            return;
-          }
-          this.numActivePoints = this.data.curveNumberPoints*this.timeSinceStart /totalTime;
-          if (this.numActivePoints > this.data.curveNumberPoints){
-            this.numActivePoints = this.data.curveNumberPoints;
-          }
-          this.timeSinceStart += stepTime;
-        }, stepTime);
+        timeSinceDrawStart = 0;
+      }
+      timeSinceDrawStart += delta;
+      this.numActivePoints = this.data.curveNumberPoints*timeSinceDrawStart/totalTime;
+      if (this.numActivePoints > this.data.curveNumberPoints){
+        this.numActivePoints = this.data.curveNumberPoints;
       }
 
       // Only check for intersection if interval time has passed.
