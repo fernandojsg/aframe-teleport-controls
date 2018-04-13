@@ -208,7 +208,7 @@ AFRAME.registerComponent('teleport-controls', {
         this.lastDrawnIndex = 0;
         const numPoints = this.data.drawIncrementally ? this.numActivePoints : this.line.numPoints;
         for (var i = 0; i < numPoints+1; i++) {
-          let t;
+          var t;
           if (i == Math.floor(numPoints+1)){
             t =  numPoints / (this.line.numPoints - 1);
           }
@@ -382,9 +382,9 @@ AFRAME.registerComponent('teleport-controls', {
       this.hitPoint.copy(intersects[0].point);
 
       // If hit, just fill the rest of the points with the hit point and break the loop
-     for (var j = i; j < this.line.numPoints; j++) {
-       this.line.setPoint(j, this.hitPoint);
-     }
+      for (var j = i; j < this.line.numPoints; j++) {
+        this.line.setPoint(j, this.hitPoint);
+      }
       return true;
     } else {
       this.line.setPoint(i, next);
