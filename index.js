@@ -44,7 +44,9 @@ AFRAME.registerComponent('teleport-controls', {
     curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
     defaultPlaneSize: { default: 100 },
     landingNormal: {type: 'vec3', default: '0 1 0'},
-    landingMaxAngle: {default: '45', min: 0, max: 360}
+    landingMaxAngle: {default: '45', min: 0, max: 360},
+    drawIncrementally: {default: false},
+    opacity: {default: 1.0}
   },
 
   init: function () {
@@ -109,10 +111,15 @@ AFRAME.registerComponent('teleport-controls', {
     this.curveMissColor.set(data.curveMissColor);
     this.curveHitColor.set(data.curveHitColor);
 
+
     // Create or update line mesh.
     if (!this.line ||
         'curveLineWidth' in diff || 'curveNumberPoints' in diff || 'type' in diff) {
+
       this.line = createLine(data);
+      this.line.material.opacity = this.data.opacity;
+      this.line.material.transparent = this.data.opacity < 1;
+      this.numActivePoints = data.curveNumberPoints;
       this.teleportEntity.setObject3D('mesh', this.line.mesh);
     }
 
@@ -159,6 +166,27 @@ AFRAME.registerComponent('teleport-controls', {
 
     return function (time, delta) {
       if (!this.active) { return; }
+      if (this.redrawLine && this.data.drawIncrementally){
+        this.redrawLine = false;
+        // Draw the line over some amount of time.
+        this.timeSinceStart = 0;
+        if (this.asyncActivePointManipulator){
+          window.clearInterval(this.asyncActivePointManipulator);
+        }
+        const totalTime = 600;
+        const stepTime = 50;
+        this.asyncActivePointManipulator = window.setInterval(()=>{
+          if (this.timeSinceStart > totalTime){
+            window.clearInterval(this.asyncActivePointManipulator);
+            return;
+          }
+          this.numActivePoints = this.data.curveNumberPoints*this.timeSinceStart /totalTime;
+          if (this.numActivePoints > this.data.curveNumberPoints){
+            this.numActivePoints = this.data.curveNumberPoints;
+          }
+          this.timeSinceStart += stepTime;
+        }, stepTime);
+      }
 
       // Only check for intersection if interval time has passed.
       if (this.prevCheckTime && (time - this.prevCheckTime < this.data.interval)) { return; }
@@ -184,7 +212,9 @@ AFRAME.registerComponent('teleport-controls', {
       if (this.data.type === 'parabolic') {
         v0.copy(direction).multiplyScalar(this.data.curveShootingSpeed);
 
-        for (var i = 0; i < this.line.numPoints; i++) {
+        this.lastDrawnIndex = 0;
+        const numPoints = this.data.drawIncrementally ? this.numActivePoints : this.line.numPoints;
+        for (var i = 0; i < numPoints; i++) {
           var t = i / (this.line.numPoints - 1);
           parabolicCurve(p0, v0, a, t, next);
           // Update the raycaster with the length of the current segment last->next
@@ -192,8 +222,17 @@ AFRAME.registerComponent('teleport-controls', {
           this.raycaster.far = dirLastNext.length();
           this.raycaster.set(last, dirLastNext);
 
+          this.lastDrawnPoint = i;
+          this.endedEarly = true;
+          this.lastDrawnPoint = next;
+          this.lastDrawnIndex = i;
           if (this.checkMeshCollisions(i, next)) { break; }
+          this.endedEarly = false;
+
           last.copy(next);
+        }
+        for (var j = this.lastDrawnIndex+1; j < this.line.numPoints; j++) {
+          this.line.setPoint(j, this.lastDrawnPoint);
         }
       } else if (this.data.type === 'line') {
         next.copy(last).add(auxDirection.copy(direction).multiplyScalar(this.data.maxLength));
@@ -243,6 +282,8 @@ AFRAME.registerComponent('teleport-controls', {
 
   onButtonDown: function () {
     this.active = true;
+    this.redrawLine = true;
+    this.numActivePoints = 1;
   },
 
   /**
@@ -340,9 +381,9 @@ AFRAME.registerComponent('teleport-controls', {
       this.hitPoint.copy(intersects[0].point);
 
       // If hit, just fill the rest of the points with the hit point and break the loop
-      for (var j = i; j < this.line.numPoints; j++) {
-        this.line.setPoint(j, this.hitPoint);
-      }
+     for (var j = i; j < this.line.numPoints; j++) {
+       this.line.setPoint(j, this.hitPoint);
+     }
       return true;
     } else {
       this.line.setPoint(i, next);
