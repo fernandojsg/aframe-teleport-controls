@@ -267,12 +267,9 @@
 	          this.raycaster.far = dirLastNext.length();
 	          this.raycaster.set(last, dirLastNext);
 
-	          this.lastDrawnPoint = i;
-	          this.endedEarly = true;
 	          this.lastDrawnPoint = next;
 	          this.lastDrawnIndex = i;
 	          if (this.checkMeshCollisions(i, next)) { break; }
-	          this.endedEarly = false;
 
 	          last.copy(next);
 	        }
@@ -328,7 +325,6 @@
 	  onButtonDown: function () {
 	    this.active = true;
 	    this.redrawLine = true;
-	    this.numActivePoints = 1;
 	  },
 
 	  /**
