@@ -43,7 +43,7 @@ AFRAME.registerComponent('teleport-controls', {
     curveMissColor: {type: 'color', default: '#ff0000'},
     curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
     defaultPlaneSize: { default: 100 },
-    landingNormal: {type: 'vec3', default: { x: 0, y: 1, z: 0 },
+    landingNormal: {type: 'vec3', default: { x: 0, y: 1, z: 0 }},
     landingMaxAngle: {default: '45', min: 0, max: 360},
     drawIncrementally: {default: false},
     incrementalDrawMs: {default: 700},
