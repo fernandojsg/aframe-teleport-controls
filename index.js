@@ -422,6 +422,7 @@ function createHitEntity (data) {
     side: 'double',
     depthTest: false
   });
+  torus.setAttribute('rotation', '-90 0 0');
   hitEntity.appendChild(torus);
 
   // Cylinder.
@@ -441,9 +442,6 @@ function createHitEntity (data) {
     src: cylinderTexture,
     transparent: true,
     depthTest: false
-  });
-  setTimeout(function () {
-    cylinder.getObject3D('mesh').rotation.x += Math.PI / 2;
   });
   hitEntity.appendChild(cylinder);
 
