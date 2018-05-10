@@ -418,7 +418,7 @@ function createDefaultPlane (size) {
   var geometry;
   var material;
 
-  geometry = new THREE.PlaneBufferGeometry(100, 100);
+  geometry = new THREE.PlaneBufferGeometry(size, size);
   geometry.rotateX(-Math.PI / 2);
   material = new THREE.MeshBasicMaterial({color: 0xffff00});
   return new THREE.Mesh(geometry, material);
