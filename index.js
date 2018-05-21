@@ -30,6 +30,7 @@ AFRAME.registerComponent('teleport-controls', {
     endEvents: {type: 'array'},
     collisionEntities: {default: ''},
     checkCollisionChildren: {default: true},
+    direction: {type: 'vec3', default: new THREE.Vector3(0, 0, -1)},
     hitEntity: {type: 'selector'},
     hitEntityAlignNormal: {default: true},
     cameraRig: {type: 'selector'},
@@ -172,7 +173,7 @@ AFRAME.registerComponent('teleport-controls', {
       var matrixWorld = this.obj.matrixWorld;
       matrixWorld.decompose(translation, quaternion, scale);
 
-      var direction = shootAngle.set(0, 0, -1)
+      var direction = shootAngle.copy(this.data.direction)
         .applyQuaternion(quaternion).normalize();
       this.line.setDirection(auxDirection.copy(direction));
       this.obj.getWorldPosition(p0);
