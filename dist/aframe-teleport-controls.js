@@ -81,6 +81,7 @@
 	    hitCylinderColor: {type: 'color', default: '#99ff99'},
 	    hitCylinderRadius: {default: 0.25, min: 0},
 	    hitCylinderHeight: {default: 0.3, min: 0},
+	    interval: {default: 0},
 	    maxLength: {default: 10, min: 0, if: {type: ['line']}},
 	    curveNumberPoints: {default: 30, min: 2, if: {type: ['parabolic']}},
 	    curveLineWidth: {default: 0.025},
@@ -89,7 +90,11 @@
 	    curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
 	    defaultPlaneSize: { default: 100 },
 	    landingNormal: {type: 'vec3', default: '0 1 0'},
-	    landingMaxAngle: {default: '45', min: 0, max: 360}
+	    landingMaxAngle: {default: '45', min: 0, max: 360},
+	    drawIncrementally: {default: false},
+	    incrementalDrawMs: {default: 700},
+	    missOpacity: {default: 1.0},
+	    hitOpacity: {default: 1.0}
 	  },
 
 	  init: function () {
@@ -110,6 +115,7 @@
 	    };
 
 	    this.hit = false;
+	    this.prevCheckTime = undefined;
 	    this.prevHitHeight = 0;
 	    this.referenceNormal = new THREE.Vector3();
 	    this.curveMissColor = new THREE.Color();
@@ -117,6 +123,7 @@
 	    this.raycaster = new THREE.Raycaster();
 
 	    this.defaultPlane = createDefaultPlane(this.data.defaultPlaneSize);
+	    this.defaultCollisionMeshes = [this.defaultPlane];
 
 	    teleportEntity = this.teleportEntity = document.createElement('a-entity');
 	    teleportEntity.classList.add('teleportRay');
@@ -152,10 +159,15 @@
 	    this.curveMissColor.set(data.curveMissColor);
 	    this.curveHitColor.set(data.curveHitColor);
 
+
 	    // Create or update line mesh.
 	    if (!this.line ||
 	        'curveLineWidth' in diff || 'curveNumberPoints' in diff || 'type' in diff) {
+
 	      this.line = createLine(data);
+	      this.line.material.opacity = this.data.hitOpacity;
+	      this.line.material.transparent = this.data.hitOpacity < 1;
+	      this.numActivePoints = data.curveNumberPoints;
 	      this.teleportEntity.setObject3D('mesh', this.line.mesh);
 	    }
 
@@ -199,9 +211,24 @@
 	    var shootAngle = new THREE.Vector3();
 	    var lastNext = new THREE.Vector3();
 	    var auxDirection = new THREE.Vector3();
+	    var timeSinceDrawStart = 0;
 
 	    return function (time, delta) {
 	      if (!this.active) { return; }
+	      if (this.data.drawIncrementally && this.redrawLine){
+	        this.redrawLine = false;
+	        timeSinceDrawStart = 0;
+	      }
+	      timeSinceDrawStart += delta;
+	      this.numActivePoints = this.data.curveNumberPoints*timeSinceDrawStart/this.data.incrementalDrawMs;
+	      if (this.numActivePoints > this.data.curveNumberPoints){
+	        this.numActivePoints = this.data.curveNumberPoints;
+	      }
+
+	      // Only check for intersection if interval time has passed.
+	      if (this.prevCheckTime && (time - this.prevCheckTime < this.data.interval)) { return; }
+	      // Update check time.
+	      this.prevCheckTime = time;
 
 	      var matrixWorld = this.obj.matrixWorld;
 	      matrixWorld.decompose(translation, quaternion, scale);
@@ -216,22 +243,38 @@
 	      // Set default status as non-hit
 	      this.teleportEntity.setAttribute('visible', true);
 	      this.line.material.color.set(this.curveMissColor);
+	      this.line.material.opacity = this.data.missOpacity;
+	      this.line.material.transparent = this.data.missOpacity < 1;
 	      this.hitEntity.setAttribute('visible', false);
 	      this.hit = false;
 
 	      if (this.data.type === 'parabolic') {
 	        v0.copy(direction).multiplyScalar(this.data.curveShootingSpeed);
 
-	        for (var i = 0; i < this.line.numPoints; i++) {
-	          var t = i / (this.line.numPoints - 1);
+	        this.lastDrawnIndex = 0;
+	        const numPoints = this.data.drawIncrementally ? this.numActivePoints : this.line.numPoints;
+	        for (var i = 0; i < numPoints+1; i++) {
+	          var t;
+	          if (i == Math.floor(numPoints+1)){
+	            t =  numPoints / (this.line.numPoints - 1);
+	          }
+	          else {
+	            t = i / (this.line.numPoints - 1);
+	          }
 	          parabolicCurve(p0, v0, a, t, next);
 	          // Update the raycaster with the length of the current segment last->next
 	          var dirLastNext = lastNext.copy(next).sub(last).normalize();
 	          this.raycaster.far = dirLastNext.length();
 	          this.raycaster.set(last, dirLastNext);
 
+	          this.lastDrawnPoint = next;
+	          this.lastDrawnIndex = i;
 	          if (this.checkMeshCollisions(i, next)) { break; }
+
 	          last.copy(next);
+	        }
+	        for (var j = this.lastDrawnIndex+1; j < this.line.numPoints; j++) {
+	          this.line.setPoint(j, this.lastDrawnPoint);
 	        }
 	      } else if (this.data.type === 'line') {
 	        next.copy(last).add(auxDirection.copy(direction).multiplyScalar(this.data.maxLength));
@@ -281,6 +324,7 @@
 
 	  onButtonDown: function () {
 	    this.active = true;
+	    this.redrawLine = true;
 	  },
 
 	  /**
@@ -355,10 +399,15 @@
 	    // @todo We should add a property to define if the collisionEntity is dynamic or static
 	    // If static we should do the map just once, otherwise we're recreating the array in every
 	    // loop when aiming.
-	    var meshes = this.collisionEntities.map(function (entity) {
-	      return entity.getObject3D('mesh');
-	    }).filter(function (n) { return n; });
-	    meshes = meshes.length ? meshes : [this.defaultPlane];
+	    var meshes;
+	    if (!this.data.collisionEntities) {
+	      meshes = this.defaultCollisionMeshes;
+	    } else {
+	      meshes = this.collisionEntities.map(function (entity) {
+	        return entity.getObject3D('mesh');
+	      }).filter(function (n) { return n; });
+	      meshes = meshes.length ? meshes : this.defaultCollisionMeshes;
+	    }
 
 	    var intersects = this.raycaster.intersectObjects(meshes, true);
 	    if (intersects.length > 0 && !this.hit &&
@@ -366,6 +415,8 @@
 	      var point = intersects[0].point;
 
 	      this.line.material.color.set(this.curveHitColor);
+	      this.line.material.opacity = this.data.hitOpacity;
+	      this.line.material.transparent= this.data.hitOpacity < 1;
 	      this.hitEntity.setAttribute('position', point);
 	      this.hitEntity.setAttribute('visible', true);
 
