@@ -305,7 +305,11 @@ AFRAME.registerComponent('teleport-controls', {
       // If a teleportOrigin exists, offset the rig such that the teleportOrigin is above the hitPoint
       const teleportOrigin = this.data.teleportOrigin;
       if (teleportOrigin) {
-        teleportOrigin.object3D.getWorldPosition(teleportOriginWorldPosition);
+        if (teleportOrigin.getObject3D('camera')) {
+          teleportOrigin.getObject3D('camera').getWorldPosition(teleportOriginWorldPosition);
+        } else {
+          teleportOrigin.getWorldPosition(teleportOriginWorldPosition);
+        }
         this.newRigWorldPosition.sub(teleportOriginWorldPosition).add(this.rigWorldPosition);
       }
 
