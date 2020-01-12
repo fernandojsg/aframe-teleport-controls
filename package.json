@@ -1,6 +1,6 @@
 {
   "name": "aframe-teleport-controls",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A Teleport Controls component for A-Frame.",
   "main": "index.js",
   "unpkg": "dist/aframe-teleport-controls.min.js",
