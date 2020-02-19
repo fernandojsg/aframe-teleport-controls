@@ -89,7 +89,7 @@
 	    curveMissColor: {type: 'color', default: '#ff0000'},
 	    curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
 	    defaultPlaneSize: { default: 100 },
-	    landingNormal: {type: 'vec3', default: '0 1 0'},
+	    landingNormal: {type: 'vec3', default: { x: 0, y: 1, z: 0 }},
 	    landingMaxAngle: {default: '45', min: 0, max: 360},
 	    drawIncrementally: {default: false},
 	    incrementalDrawMs: {default: 700},
@@ -132,19 +132,23 @@
 
 	    this.onButtonDown = this.onButtonDown.bind(this);
 	    this.onButtonUp = this.onButtonUp.bind(this);
+	    
 	    if (this.data.startEvents.length && this.data.endEvents.length) {
-
 	      for (i = 0; i < this.data.startEvents.length; i++) {
-	        el.addEventListener(this.data.startEvents[i], this.onButtonDown);
-	      }
-	      for (i = 0; i < this.data.endEvents.length; i++) {
-	        el.addEventListener(this.data.endEvents[i], this.onButtonUp);
-	      }
-	    } else {
-	      el.addEventListener(data.button + 'down', this.onButtonDown);
-	      el.addEventListener(data.button + 'up', this.onButtonUp);
-	    }
-
+	        if (this.data.startEvents[i] === 'axismove') {
+	          el.addEventListener('axismove', this.handleAxis.bind(this))
+	        } else {
+	          el.addEventListener(this.data.startEvents[i], this.onButtonDown);	
+	        }
+	      }	
+	      for (i = 0; i < this.data.endEvents.length; i++) {	
+	        if (this.data.startEvents[i] !== 'axismove') {
+	          el.addEventListener(this.data.endEvents[i], this.onButtonUp);	
+	        }
+	      }	
+	    } else {	
+	      el.addEventListener('axismove', this.handleAxis.bind(this))
+	    }	
 	    this.queryCollisionEntities();
 	  },
 
@@ -286,6 +290,18 @@
 	      }
 	    };
 	  })(),
+
+	  handleAxis: function (evt) {
+	    if (!evt.detail.axis || !evt.detail.axis.length) return 
+	    const xr = evt.detail.axis.length === 4
+	    const axisX = parseInt(evt.detail.axis[xr ? 2 : 0] * 10)
+	    const axisY = parseInt(evt.detail.axis[xr ? 3 : 1] * 10)
+	    if (axisX === 0 && axisY === 0) {
+	      this.onButtonUp(evt)
+	    } else if (Math.abs(axisX) <= 1 && axisY === -9) {
+	      this.onButtonDown(evt)
+	    }
+	  },
 
 	  /**
 	   * Run `querySelectorAll` for `collisionEntities` and maintain it with `child-attached`
@@ -502,7 +518,7 @@
 	  var geometry;
 	  var material;
 
-	  geometry = new THREE.PlaneBufferGeometry(100, 100);
+	  geometry = new THREE.PlaneBufferGeometry(size, size);
 	  geometry.rotateX(-Math.PI / 2);
 	  material = new THREE.MeshBasicMaterial({color: 0xffff00});
 	  return new THREE.Mesh(geometry, material);
@@ -556,7 +572,6 @@
 	  });
 
 	  this.mesh = new THREE.Mesh(this.geometry, this.material);
-	  this.mesh.drawMode = THREE.TriangleStripDrawMode;
 
 	  this.mesh.frustumCulled = false;
 	  this.mesh.vertices = this.vertices;
