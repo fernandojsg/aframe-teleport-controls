@@ -365,7 +365,7 @@ AFRAME.registerComponent('teleport-controls', {
 
     var intersects = this.raycaster.intersectObjects(meshes, true);
     if (intersects.length > 0 && !this.hit &&
-        this.isValidNormalsAngle(intersects[0].face.normal)) {
+        this.isValidNormalsAngle(this.calcHitNormal(intersects[0]))) {
       var point = intersects[0].point;
 
       this.line.material.color.set(this.curveHitColor);
@@ -388,6 +388,22 @@ AFRAME.registerComponent('teleport-controls', {
     }
   },
 
+  calcHitNormal: (function () {
+    var hitNormal = new THREE.Vector3();
+    var axis = new THREE.Vector3(1, 0, 0);
+    var angle = - Math.PI / 2;
+    var rotation;
+    return function (intersect) {
+      hitNormal.copy(intersect.face.normal);
+      if (intersect.object.el) {
+        rotation = intersect.object.el.getAttribute('rotation');
+        if (rotation && rotation.x === -90) {
+          hitNormal.applyAxisAngle(axis, angle);
+        }
+      }
+      return hitNormal;
+    };
+  })(),
   isValidNormalsAngle: function (collisionNormal) {
     var angleNormals = this.referenceNormal.angleTo(collisionNormal);
     return (THREE.Math.RAD2DEG * angleNormals <= this.data.landingMaxAngle);
