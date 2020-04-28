@@ -29,6 +29,7 @@ AFRAME.registerComponent('teleport-controls', {
     startEvents: {type: 'array'},
     endEvents: {type: 'array'},
     collisionEntities: {default: ''},
+    drawForAllCollisions: {default: true},
     hitEntity: {type: 'selector'},
     cameraRig: {type: 'selector'},
     teleportOrigin: {type: 'selector'},
