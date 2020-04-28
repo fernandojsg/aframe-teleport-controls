@@ -75,6 +75,7 @@
 	    startEvents: {type: 'array'},
 	    endEvents: {type: 'array'},
 	    collisionEntities: {default: ''},
+	    drawForAllCollisions: {default: true},
 	    hitEntity: {type: 'selector'},
 	    cameraRig: {type: 'selector'},
 	    teleportOrigin: {type: 'selector'},
@@ -89,7 +90,7 @@
 	    curveMissColor: {type: 'color', default: '#ff0000'},
 	    curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
 	    defaultPlaneSize: { default: 100 },
-	    landingNormal: {type: 'vec3', default: '0 1 0'},
+	    landingNormal: {type: 'vec3', default: { x: 0, y: 1, z: 0 }},
 	    landingMaxAngle: {default: '45', min: 0, max: 360},
 	    drawIncrementally: {default: false},
 	    incrementalDrawMs: {default: 700},
@@ -502,7 +503,7 @@
 	  var geometry;
 	  var material;
 
-	  geometry = new THREE.PlaneBufferGeometry(100, 100);
+	  geometry = new THREE.PlaneBufferGeometry(size, size);
 	  geometry.rotateX(-Math.PI / 2);
 	  material = new THREE.MeshBasicMaterial({color: 0xffff00});
 	  return new THREE.Mesh(geometry, material);
