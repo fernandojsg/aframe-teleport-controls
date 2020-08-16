@@ -89,7 +89,7 @@
 	    curveMissColor: {type: 'color', default: '#ff0000'},
 	    curveShootingSpeed: {default: 5, min: 0, if: {type: ['parabolic']}},
 	    defaultPlaneSize: { default: 100 },
-	    landingNormal: {type: 'vec3', default: '0 1 0'},
+	    landingNormal: {type: 'vec3', default: { x: 0, y: 1, z: 0 }},
 	    landingMaxAngle: {default: '45', min: 0, max: 360},
 	    drawIncrementally: {default: false},
 	    incrementalDrawMs: {default: 700},
@@ -502,7 +502,7 @@
 	  var geometry;
 	  var material;
 
-	  geometry = new THREE.PlaneBufferGeometry(100, 100);
+	  geometry = new THREE.PlaneBufferGeometry(size, size);
 	  geometry.rotateX(-Math.PI / 2);
 	  material = new THREE.MeshBasicMaterial({color: 0xffff00});
 	  return new THREE.Mesh(geometry, material);
@@ -548,7 +548,8 @@
 	  this.uvs = new Float32Array(numPoints * 2 * 2);
 	  this.width = width;
 
-	  this.geometry.addAttribute('position', new THREE.BufferAttribute(this.vertices, 3).setDynamic(true));
+	  //addAttribute deprecated in favor of setAttribute and setDynamic deprecated in favor of setUsage
+	  this.geometry.setAttribute('position', new THREE.BufferAttribute(this.vertices, 3).setUsage(true));
 
 	  this.material = new THREE.MeshBasicMaterial({
 	    side: THREE.DoubleSide,
@@ -556,7 +557,7 @@
 	  });
 
 	  this.mesh = new THREE.Mesh(this.geometry, this.material);
-	  this.mesh.drawMode = THREE.TriangleStripDrawMode;
+	  //this.mesh.drawMode = THREE.TriangleStripDrawMode;
 
 	  this.mesh.frustumCulled = false;
 	  this.mesh.vertices = this.vertices;
